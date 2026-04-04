@@ -1,13 +1,13 @@
-import type { GeoJSON } from 'geojson'
+import type { GeoJSON } from "geojson";
 
 export const KZ_RAIL_ROUTES: GeoJSON.FeatureCollection = {
-  type: 'FeatureCollection',
+  type: "FeatureCollection",
   features: [
     {
-      type: 'Feature',
-      properties: { name: 'Astana — Almaty', status: 'normal' },
+      type: "Feature",
+      properties: { name: "Astana — Almaty", status: "normal" },
       geometry: {
-        type: 'LineString',
+        type: "LineString",
         coordinates: [
           [71.45, 51.18],
           [70.8, 49.5],
@@ -21,10 +21,10 @@ export const KZ_RAIL_ROUTES: GeoJSON.FeatureCollection = {
       },
     },
     {
-      type: 'Feature',
-      properties: { name: 'Astana — Aktobe', status: 'normal' },
+      type: "Feature",
+      properties: { name: "Astana — Aktobe", status: "normal" },
       geometry: {
-        type: 'LineString',
+        type: "LineString",
         coordinates: [
           [71.45, 51.18],
           [69.0, 51.5],
@@ -35,10 +35,10 @@ export const KZ_RAIL_ROUTES: GeoJSON.FeatureCollection = {
       },
     },
     {
-      type: 'Feature',
-      properties: { name: 'Astana — Semey', status: 'normal' },
+      type: "Feature",
+      properties: { name: "Astana — Semey", status: "normal" },
       geometry: {
-        type: 'LineString',
+        type: "LineString",
         coordinates: [
           [71.45, 51.18],
           [73.5, 51.0],
@@ -49,10 +49,10 @@ export const KZ_RAIL_ROUTES: GeoJSON.FeatureCollection = {
       },
     },
     {
-      type: 'Feature',
-      properties: { name: 'Shymkent — Kyzylorda', status: 'warning' },
+      type: "Feature",
+      properties: { name: "Shymkent — Kyzylorda", status: "warning" },
       geometry: {
-        type: 'LineString',
+        type: "LineString",
         coordinates: [
           [69.6, 42.3],
           [68.5, 44.0],
@@ -63,10 +63,10 @@ export const KZ_RAIL_ROUTES: GeoJSON.FeatureCollection = {
       },
     },
     {
-      type: 'Feature',
-      properties: { name: 'Almaty — Druzhba', status: 'normal' },
+      type: "Feature",
+      properties: { name: "Almaty — Druzhba", status: "normal" },
       geometry: {
-        type: 'LineString',
+        type: "LineString",
         coordinates: [
           [76.9, 43.2],
           [78.0, 43.5],
@@ -76,10 +76,10 @@ export const KZ_RAIL_ROUTES: GeoJSON.FeatureCollection = {
       },
     },
     {
-      type: 'Feature',
-      properties: { name: 'Kyzylorda — Shymkent', status: 'normal' },
+      type: "Feature",
+      properties: { name: "Kyzylorda — Shymkent", status: "normal" },
       geometry: {
-        type: 'LineString',
+        type: "LineString",
         coordinates: [
           [65.5, 44.8],
           [66.8, 44.5],
@@ -90,4 +90,4 @@ export const KZ_RAIL_ROUTES: GeoJSON.FeatureCollection = {
       },
     },
   ],
-}
+};

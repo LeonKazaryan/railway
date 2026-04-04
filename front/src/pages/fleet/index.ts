@@ -1,1 +1,1 @@
-export { FleetPage } from './ui/FleetPage'
+export { FleetPage } from "./ui/FleetPage";
