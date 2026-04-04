@@ -1,0 +1,17 @@
+version: '3.5'
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:12.2
+    environment:
+      POSTGRES_USER: "railway"
+      POSTGRES_PASSWORD: "railway"
+      POSTGRES_DB: "railway"
+      PGDATA: /data/postgres
+    volumes:
+      - ./volumes/postgres/data:/data/postgres
+      - ./volumes/postgres/logs:/logs
+    ports:
+      - "5436:5432"
+    restart: unless-stopped

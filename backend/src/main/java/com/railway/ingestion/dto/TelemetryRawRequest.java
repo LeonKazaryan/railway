@@ -4,7 +4,6 @@ import com.railway.ingestion.enumtype.AlarmStatus;
 import com.railway.ingestion.enumtype.CommState;
 import com.railway.ingestion.enumtype.DoorsState;
 import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
