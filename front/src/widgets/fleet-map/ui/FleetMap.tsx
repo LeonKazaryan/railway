@@ -6,20 +6,28 @@ import {
   MAP_STYLE_DARK,
   MAP_STYLE_LIGHT,
 } from "@/shared/config/map.config";
-import { useFleetTrains } from "@/features/fleet-live/model/store";
+import {
+  useFleetLiveStore,
+  wsToTrain,
+} from "@/features/fleet-live/model/store";
 import { useTrainSelectionStore } from "@/features/train-selection/model/store";
 import { useLocaleStore } from "@/features/locale/model/store";
 import { useThemeStore } from "@/features/theme/model/store";
 import type { AppTheme } from "@/features/theme/model/store";
 import type { Train } from "@/entities/train/model/types";
 import { KZ_RAIL_ROUTES } from "../config/routes";
-import { createTrainMarkerElement } from "./TrainMarker";
+import {
+  createTrainMarkerElement,
+  trainMarkerVisualKey,
+} from "./TrainMarker";
 
 const STATUS_LINE_COLORS: Record<string, string> = {
   normal: "#38bdf8",
   warning: "#f59e0b",
   critical: "#f43f5e",
 };
+
+const POS_EPS = 1e-7;
 
 function mapStyleUrl(theme: AppTheme) {
   return theme === "light" ? MAP_STYLE_LIGHT : MAP_STYLE_DARK;
@@ -61,15 +69,17 @@ function addRouteLayers(map: maplibregl.Map) {
 }
 
 export function FleetMap() {
-  const locale = useLocaleStore((s) => s.locale);
   const theme = useThemeStore((s) => s.theme);
-  const liveTrains = useFleetTrains();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const lastVisualKeyRef = useRef<Map<string, string>>(new Map());
+  const lastPosRef = useRef<Map<string, { lng: number; lat: number }>>(
+    new Map(),
+  );
+  const rafRef = useRef<number | null>(null);
   const skipThemeStyleOnce = useRef(true);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const { selectedTrainId, setSelectedTrain } = useTrainSelectionStore();
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -110,8 +120,10 @@ export function FleetMap() {
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();
+      lastVisualKeyRef.current.clear();
+      lastPosRef.current.clear();
     };
-  }, [setSelectedTrain]);
+  }, []);
 
   useEffect(() => {
     if (!mapLoaded || !mapRef.current?.isStyleLoaded()) return;
@@ -131,44 +143,103 @@ export function FleetMap() {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
 
-    const currentIds = new Set(liveTrains.map((t) => t.id));
+    const scheduleSync = () => {
+      if (rafRef.current != null) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        const trainsMap = useFleetLiveStore.getState().trains;
+        const selectedId = useTrainSelectionStore.getState().selectedTrainId;
+        const th = useThemeStore.getState().theme;
+        const loc = useLocaleStore.getState().locale;
 
-    markersRef.current.forEach((marker, id) => {
-      if (!currentIds.has(id)) {
-        marker.remove();
-        markersRef.current.delete(id);
+        const trains: Train[] = Array.from(trainsMap.values()).map(wsToTrain);
+        const currentIds = new Set(trains.map((t) => t.id));
+
+        markersRef.current.forEach((marker, id) => {
+          if (!currentIds.has(id)) {
+            marker.remove();
+            markersRef.current.delete(id);
+            lastVisualKeyRef.current.delete(id);
+            lastPosRef.current.delete(id);
+          }
+        });
+
+        for (const train of trains) {
+          const lng = train.position.lng;
+          const lat = train.position.lat;
+          const pos: [number, number] = [lng, lat];
+          const isSelected = selectedId === train.id;
+          const vk = trainMarkerVisualKey(train, isSelected, th, loc);
+          const existing = markersRef.current.get(train.id);
+
+          if (!existing) {
+            const el = createTrainMarkerElement(train, isSelected, th);
+            el.addEventListener("click", () => {
+              useTrainSelectionStore.getState().setSelectedTrain(train.id);
+            });
+            const marker = new maplibregl.Marker({
+              element: el,
+              anchor: "center",
+            })
+              .setLngLat(pos)
+              .addTo(map);
+            markersRef.current.set(train.id, marker);
+            lastVisualKeyRef.current.set(train.id, vk);
+            lastPosRef.current.set(train.id, { lng, lat });
+            continue;
+          }
+
+          const prevPos = lastPosRef.current.get(train.id);
+          const moved =
+            !prevPos ||
+            Math.abs(prevPos.lng - lng) > POS_EPS ||
+            Math.abs(prevPos.lat - lat) > POS_EPS;
+          if (moved) {
+            existing.setLngLat(pos);
+            lastPosRef.current.set(train.id, { lng, lat });
+          }
+
+          const prevVk = lastVisualKeyRef.current.get(train.id);
+          if (prevVk === vk) continue;
+
+          existing.remove();
+          markersRef.current.delete(train.id);
+          lastVisualKeyRef.current.delete(train.id);
+
+          const el = createTrainMarkerElement(train, isSelected, th);
+          el.addEventListener("click", () => {
+            useTrainSelectionStore.getState().setSelectedTrain(train.id);
+          });
+          const marker = new maplibregl.Marker({
+            element: el,
+            anchor: "center",
+          })
+            .setLngLat(pos)
+            .addTo(map);
+          markersRef.current.set(train.id, marker);
+          lastVisualKeyRef.current.set(train.id, vk);
+          lastPosRef.current.set(train.id, { lng, lat });
+        }
+      });
+    };
+
+    const unsubs = [
+      useFleetLiveStore.subscribe(scheduleSync),
+      useTrainSelectionStore.subscribe(scheduleSync),
+      useThemeStore.subscribe(scheduleSync),
+      useLocaleStore.subscribe(scheduleSync),
+    ];
+
+    scheduleSync();
+
+    return () => {
+      unsubs.forEach((u) => u());
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
-    });
-
-    liveTrains.forEach((train: Train) => {
-      const existing = markersRef.current.get(train.id);
-
-      const el = createTrainMarkerElement(
-        train,
-        selectedTrainId === train.id,
-        theme,
-      );
-      el.addEventListener("click", () => setSelectedTrain(train.id));
-
-      if (existing) {
-        existing.setLngLat([train.position.lng, train.position.lat]);
-        existing.getElement().replaceWith(el);
-        const fresh = new maplibregl.Marker({
-          element: el,
-          anchor: "center",
-        })
-          .setLngLat([train.position.lng, train.position.lat])
-          .addTo(map);
-        markersRef.current.set(train.id, fresh);
-        existing.remove();
-      } else {
-        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-          .setLngLat([train.position.lng, train.position.lat])
-          .addTo(map);
-        markersRef.current.set(train.id, marker);
-      }
-    });
-  }, [liveTrains, selectedTrainId, setSelectedTrain, locale, theme, mapLoaded]);
+    };
+  }, [mapLoaded]);
 
   return (
     <div

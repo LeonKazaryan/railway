@@ -3,6 +3,23 @@ import { TRAIN_STATUS_CONFIG } from "@/entities/train/model/config";
 import { i18n } from "@/shared/config/i18n/instance";
 import type { AppTheme } from "@/features/theme/model/store";
 
+export function trainMarkerVisualKey(
+  train: Train,
+  isSelected: boolean,
+  mapTheme: AppTheme,
+  locale: string,
+): string {
+  return [
+    train.id,
+    train.status,
+    train.speed,
+    train.healthScore,
+    isSelected ? "1" : "0",
+    mapTheme,
+    locale,
+  ].join("|");
+}
+
 export function createTrainMarkerElement(
   train: Train,
   isSelected: boolean,

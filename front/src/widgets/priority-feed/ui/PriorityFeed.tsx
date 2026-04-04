@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SlidersHorizontal, ChevronRight } from "lucide-react";
-import { useFleetLiveStore } from "@/features/fleet-live/model/store";
+import { useFleetTrainsMapDebounced } from "@/features/fleet-live/model/store";
 import type { Alert, AlertSeverity } from "@/entities/alert/model/types";
 import { AlertCard } from "./AlertCard";
 
@@ -46,7 +46,7 @@ function deriveAlerts(
 export function PriorityFeed() {
   const { t } = useTranslation();
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
-  const trains = useFleetLiveStore((s) => s.trains);
+  const trains = useFleetTrainsMapDebounced();
   const alerts = useMemo(() => deriveAlerts(trains), [trains]);
 
   return (

@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { getStompBrokerUrlForDebug, getStompClient } from "@/shared/lib/stomp";
 import { apiClient } from "@/shared/api/client";
 import type { Train, TrainStatus, TrainModel } from "@/entities/train/model/types";
+
+const FLEET_UI_DEBOUNCE_MS = 120;
 
 function fleetLog(...args: unknown[]) {
   if (import.meta.env.DEV) {
@@ -190,14 +193,8 @@ export async function startFleetLiveConnection(): Promise<void> {
   stomp.activate();
 }
 
-export function useFleetTrains(): Train[] {
-  const trains = useFleetLiveStore((s) => s.trains);
-  return Array.from(trains.values()).map(wsToTrain);
-}
-
-export function useFleetStats() {
-  const trains = useFleetLiveStore((s) => s.trains);
-  const msgCount = useFleetLiveStore((s) => s.messageCount);
+function computeFleetStats() {
+  const { trains, messageCount } = useFleetLiveStore.getState();
   const arr = Array.from(trains.values());
   const total = arr.length;
   let normalCount = 0;
@@ -219,13 +216,12 @@ export function useFleetStats() {
     normalCount,
     warningCount,
     criticalCount,
-    liveStreamValue: msgCount,
+    liveStreamValue: messageCount,
   };
 }
 
-export function useTopRiskTrains() {
-  const trains = useFleetLiveStore((s) => s.trains);
-  return Array.from(trains.values())
+function computeTopRiskRows() {
+  return Array.from(useFleetLiveStore.getState().trains.values())
     .filter((ws) => (ws.healthIndex ?? 100) < 80)
     .sort((a, b) => (a.healthIndex ?? 100) - (b.healthIndex ?? 100))
     .slice(0, 5)
@@ -234,6 +230,88 @@ export function useTopRiskTrains() {
       issue: ws.faultCodes?.[0] ?? deriveStatus(ws),
       score: ws.healthIndex ?? 0,
     }));
+}
+
+export function useFleetTrains(): Train[] {
+  const [rows, setRows] = useState<Train[]>(() =>
+    Array.from(useFleetLiveStore.getState().trains.values()).map(wsToTrain),
+  );
+  useEffect(() => {
+    let tid: ReturnType<typeof setTimeout> | undefined;
+    const flush = () =>
+      setRows(
+        Array.from(useFleetLiveStore.getState().trains.values()).map(wsToTrain),
+      );
+    const unsub = useFleetLiveStore.subscribe(() => {
+      if (tid) clearTimeout(tid);
+      tid = setTimeout(flush, FLEET_UI_DEBOUNCE_MS);
+    });
+    flush();
+    return () => {
+      unsub();
+      if (tid) clearTimeout(tid);
+    };
+  }, []);
+  return rows;
+}
+
+export function useFleetStats() {
+  const [stats, setStats] = useState(computeFleetStats);
+  useEffect(() => {
+    let tid: ReturnType<typeof setTimeout> | undefined;
+    const flush = () => setStats(computeFleetStats());
+    const unsub = useFleetLiveStore.subscribe(() => {
+      if (tid) clearTimeout(tid);
+      tid = setTimeout(flush, FLEET_UI_DEBOUNCE_MS);
+    });
+    flush();
+    return () => {
+      unsub();
+      if (tid) clearTimeout(tid);
+    };
+  }, []);
+  return stats;
+}
+
+export function useTopRiskTrains() {
+  const [rows, setRows] = useState(computeTopRiskRows);
+  useEffect(() => {
+    let tid: ReturnType<typeof setTimeout> | undefined;
+    const flush = () => setRows(computeTopRiskRows());
+    const unsub = useFleetLiveStore.subscribe(() => {
+      if (tid) clearTimeout(tid);
+      tid = setTimeout(flush, FLEET_UI_DEBOUNCE_MS);
+    });
+    flush();
+    return () => {
+      unsub();
+      if (tid) clearTimeout(tid);
+    };
+  }, []);
+  return rows;
+}
+
+export function useFleetTrainsMapDebounced(
+  ms: number = FLEET_UI_DEBOUNCE_MS,
+): Map<string, WsTrainState> {
+  const [trains, setTrains] = useState<Map<string, WsTrainState>>(() =>
+    new Map(useFleetLiveStore.getState().trains),
+  );
+  useEffect(() => {
+    let tid: ReturnType<typeof setTimeout> | undefined;
+    const flush = () =>
+      setTrains(new Map(useFleetLiveStore.getState().trains));
+    const unsub = useFleetLiveStore.subscribe(() => {
+      if (tid) clearTimeout(tid);
+      tid = setTimeout(flush, ms);
+    });
+    flush();
+    return () => {
+      unsub();
+      if (tid) clearTimeout(tid);
+    };
+  }, [ms]);
+  return trains;
 }
 
 interface LiveEvent {
@@ -257,7 +335,18 @@ export function pushLiveEvent(ws: WsTrainState) {
 }
 
 export function useLiveEvents() {
-  useFleetLiveStore((s) => s.messageCount);
+  const [, bump] = useState(0);
+  useEffect(() => {
+    let tid: ReturnType<typeof setTimeout> | undefined;
+    const unsub = useFleetLiveStore.subscribe(() => {
+      if (tid) clearTimeout(tid);
+      tid = setTimeout(() => bump((n) => n + 1), FLEET_UI_DEBOUNCE_MS);
+    });
+    return () => {
+      unsub();
+      if (tid) clearTimeout(tid);
+    };
+  }, []);
   return eventBuffer.slice(0, 5);
 }
 
