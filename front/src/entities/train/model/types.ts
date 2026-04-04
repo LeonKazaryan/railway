@@ -11,6 +11,7 @@ export interface TrainPosition {
 
 export interface Train {
   id: string;
+  label: string;
   model: TrainModel;
   status: TrainStatus;
   healthScore: number;

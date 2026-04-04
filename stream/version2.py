@@ -1,23 +1,17 @@
-"""
-TE33A Multi-Line Fleet Telemetry Simulation Service
-====================================================
-4 railway lines × 10 TE33A locomotives = 40 locomotives.
-Single async tick loop at 2 Hz. All state in-memory.
-
-v3.1 — Aggressive anomalies & alert testing
-"""
-
 from __future__ import annotations
 
 import asyncio
 import collections
 import dataclasses
+import heapq
+import json
 import math
 import os
 import random
 import time
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
@@ -27,7 +21,9 @@ from pydantic import BaseModel, Field
 # CONFIGURATION
 # ============================================================
 
-LOCOS_PER_LINE: int = 10
+FLEET_SIZE: int = 10
+SINGLE_TRAIN_SPEED_KPH: float = float(os.environ.get("SINGLE_TRAIN_SPEED_KPH", "18"))
+_MODEL_ROTATION: tuple[str, ...] = ("KZ4A", "KZ8A", "TE33A")
 STREAM_HZ: float = 2.0
 TICK_INTERVAL: float = 1.0 / STREAM_HZ
 HISTORY_SECONDS: int = 1800
@@ -35,23 +31,35 @@ HISTORY_MAXLEN: int = HISTORY_SECONDS * int(STREAM_HZ)
 EVENT_MAXLEN: int = 5000
 DEFAULT_HOST: str = "0.0.0.0"
 DEFAULT_PORT: int = 8000
+TOTAL_FUEL_L: float = 6000.0
+WS_QUEUE_MAX: int = 512
+MAX_FLEET_ANOMALIES: int = 12
 SIM_SEED: int | None = (
     int(os.environ["SIM_SEED"]) if os.environ.get("SIM_SEED") else None
 )
-TOTAL_FUEL_L: float = 6000.0
-_LOCO_NS: uuid.UUID = uuid.UUID("7f3b4d2e-1a9c-4e5f-b8d6-3c7a2f1e9d0b")
-WS_QUEUE_MAX: int = 512
-# ── v3.1: Fleet anomaly budget raised for 40 locos ──
-MAX_FLEET_ANOMALIES: int = 12
+NETWORK_ID: str = "kz-synthetic-150"
+NETWORK_NAME: str = "Kazakhstan Synthetic Railway Network"
+NETWORK_JSON_ENV: str = "NETWORK_JSON_PATH"
+NETWORK_STATIONS_ENV: str = "NETWORK_STATIONS_CSV"
+NETWORK_EDGES_ENV: str = "NETWORK_EDGES_CSV"
+STATION_GEOFENCE_RADIUS_M: float = 2200.0
+APPROACH_THRESHOLD_M: float = 18000.0
+ARRIVAL_THRESHOLD_M: float = 1200.0
+MIN_ROUTE_DISTANCE_KM: float = 120.0
+MAX_ROUTE_RETRIES: int = 40
+ROUTE_DISPLAY_SAMPLE_STEP_M: float = 5_000.0
 
 if SIM_SEED is not None:
     random.seed(SIM_SEED)
+
+SINGLE_TRAIN_MODE: bool = FLEET_SIZE <= 1
 
 # ============================================================
 # UTILITIES
 # ============================================================
 
 _R_EARTH_M = 6_371_000.0
+_LOCO_NS = uuid.UUID("7f3b4d2e-1a9c-4e5f-b8d6-3c7a2f1e9d0b")
 
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -63,6 +71,38 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         + math.cos(rlat1) * math.cos(rlat2) * math.sin(dlon / 2) ** 2
     )
     return _R_EARTH_M * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def great_circle_interpolate(
+    lat1: float, lon1: float, lat2: float, lon2: float, t: float
+) -> tuple[float, float]:
+    t = max(0.0, min(1.0, t))
+    if t <= 0.0:
+        return lat1, lon1
+    if t >= 1.0:
+        return lat2, lon2
+    φ1 = math.radians(lat1)
+    λ1 = math.radians(lon1)
+    φ2 = math.radians(lat2)
+    λ2 = math.radians(lon2)
+    dlat = φ2 - φ1
+    dlon = λ2 - λ1
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(φ1) * math.cos(φ2) * math.sin(dlon / 2) ** 2
+    )
+    d = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    if d < 1e-12:
+        return lat1 + (lat2 - lat1) * t, lon1 + (lon2 - lon1) * t
+    sd = math.sin(d)
+    a_frac = math.sin((1 - t) * d) / sd
+    b_frac = math.sin(t * d) / sd
+    x = a_frac * math.cos(φ1) * math.cos(λ1) + b_frac * math.cos(φ2) * math.cos(λ2)
+    y = a_frac * math.cos(φ1) * math.sin(λ1) + b_frac * math.cos(φ2) * math.sin(λ2)
+    z = a_frac * math.sin(φ1) + b_frac * math.sin(φ2)
+    φi = math.atan2(z, math.sqrt(x * x + y * y))
+    λi = math.atan2(y, x)
+    return math.degrees(φi), math.degrees(λi)
 
 
 def bearing(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -101,22 +141,29 @@ def utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def slugify_station(name: str) -> str:
+    chars = []
+    for ch in name.lower():
+        if ch.isalnum():
+            chars.append(ch)
+        elif ch in {" ", "-", "_"}:
+            chars.append("-")
+    text = "".join(chars).strip("-")
+    while "--" in text:
+        text = text.replace("--", "-")
+    return text or "station"
+
+
+def synthetic_altitude(lat: float, lon: float) -> float:
+    base = 260.0 + (lat - 41.0) * 18.0 + (lon - 51.0) * 2.3
+    wave = 110.0 * math.sin(math.radians(lat * 4.2))
+    ridge = 75.0 * math.cos(math.radians(lon * 2.6))
+    return round(clamp(base + wave + ridge, 40.0, 1450.0), 1)
+
+
 # ============================================================
 # PYDANTIC MODELS
 # ============================================================
-
-
-class WaypointModel(BaseModel):
-    name: str
-    lat: float
-    lon: float
-    alt_m: float
-
-
-class SpeedLimitModel(BaseModel):
-    segment: str
-    min_kph: float
-    max_kph: float
 
 
 class GeofenceModel(BaseModel):
@@ -129,14 +176,32 @@ class GeofenceModel(BaseModel):
     rules: dict = Field(default_factory=dict)
 
 
+class StationModel(BaseModel):
+    station_id: str
+    station_name: str
+    anchor: str
+    lat: float
+    lon: float
+    alt_m: float
+    kind: str
+
+
+class EdgeModel(BaseModel):
+    edge_id: str
+    from_station: str
+    to_station: str
+    edge_type: str
+    approx_km: float
+
+
 class LocomotiveModel(BaseModel):
     locomotive_id: str
     model: str = "TE33A"
     serial_number: str
     operator_name: str = "KTZ Express"
     manufactured_year: int = 2023
-    line_id: str
-    line_name: str
+    network_id: str
+    network_name: str
     created_at: str
 
 
@@ -145,44 +210,35 @@ class TrainRunModel(BaseModel):
     train_id: str
     locomotive_id: str
     route_id: str
-    line_id: str
     started_at: str
     ended_at: str | None = None
     status: str = "active"
 
 
-class RailwayLineInfo(BaseModel):
-    line_id: str
-    name: str
-    waypoints: list[WaypointModel]
-    speed_limits: list[SpeedLimitModel]
-    geofences: list[GeofenceModel]
-    total_distance_km: float
-    num_locomotives: int
-
-
 class RouteProgressModel(BaseModel):
     locomotive_id: str
-    line_id: str
+    route_id: str
+    origin_station: str
+    destination_station: str
+    current_station: str
+    next_station_name: str
     active_segment_index: int
     active_segment_name: str
-    direction: str
     segment_progress: float
     distance_to_next_waypoint_km: float
-    next_waypoint_name: str
+    route_remaining_km: float
     lat: float
     lon: float
     alt_m: float
     heading_deg: float
     active_geofences: list[str]
+    path_stations: list[str]
 
 
 class LocomotiveStateCurrent(BaseModel):
     locomotive_id: str
     serial_number: str
     train_id: str
-    line_id: str
-    line_name: str
     updated_at: str
     last_ts: str
     lat: float
@@ -201,15 +257,17 @@ class LocomotiveStateCurrent(BaseModel):
     fuel_level_pct: float
     engine_rpm: float
     engine_temp_c: float
-    direction: str
     segment_name: str
+    origin_station: str
+    destination_station: str
+    route_remaining_km: float
+    path_stations: list[str]
 
 
 class EventLogEntry(BaseModel):
     event_id: str
     ts: str
     locomotive_id: str
-    line_id: str
     severity: str
     event_type: str
     code: str
@@ -224,7 +282,6 @@ class FleetSummary(BaseModel):
     warning_count: int
     critical_count: int
     average_health_index: float
-    lines: list[dict]
     locomotives: list[dict]
 
 
@@ -233,340 +290,360 @@ class HealthResponse(BaseModel):
     uptime_sec: float
     tick_count: int
     fleet_size: int
-    num_lines: int
     active_anomalies: int
+    network_id: str
 
 
 # ============================================================
-# LINE DEFINITIONS
-# ============================================================
-
-LINES_CONFIG: list[dict] = [
-    {
-        "line_id": "astana-shu",
-        "name": "Astana–Shu Line",
-        "waypoints": [
-            {"name": "Astana", "lat": 51.1954259, "lon": 71.391907, "alt_m": 350},
-            {
-                "name": "Karaganda",
-                "lat": 49.7926276,
-                "lon": 72.8053229,
-                "alt_m": 500,
-            },
-            {"name": "Balkhash", "lat": 46.8609, "lon": 74.8976911, "alt_m": 350},
-            {"name": "Shu", "lat": 43.6014393, "lon": 73.7603113, "alt_m": 600},
-        ],
-        "speed_limits": [
-            {"segment": "Astana → Karaganda", "min_kph": 80, "max_kph": 120},
-            {"segment": "Karaganda → Balkhash", "min_kph": 70, "max_kph": 100},
-            {"segment": "Balkhash → Shu", "min_kph": 75, "max_kph": 105},
-        ],
-        "geofences": [
-            {
-                "name": "astana_station",
-                "type": "station",
-                "lat": 51.1954259,
-                "lon": 71.391907,
-                "radius_m": 5000,
-            },
-            {
-                "name": "karaganda_station",
-                "type": "station",
-                "lat": 49.7926276,
-                "lon": 72.8053229,
-                "radius_m": 5000,
-            },
-            {
-                "name": "balkhash_station",
-                "type": "station",
-                "lat": 46.8609,
-                "lon": 74.8976911,
-                "radius_m": 4000,
-            },
-            {
-                "name": "shu_station",
-                "type": "station",
-                "lat": 43.6014393,
-                "lon": 73.7603113,
-                "radius_m": 5000,
-            },
-            {
-                "name": "sz_astana_shu_1",
-                "type": "slow_zone",
-                "lat": 48.3,
-                "lon": 73.9,
-                "radius_m": 15000,
-                "rules": {"speed_limit_kph": 40},
-            },
-            {
-                "name": "sz_astana_shu_2",
-                "type": "slow_zone",
-                "lat": 44.8,
-                "lon": 74.1,
-                "radius_m": 12000,
-                "rules": {"speed_limit_kph": 35},
-            },
-        ],
-        "base_serial": 100,
-        "base_train": 1000,
-    },
-    {
-        "line_id": "turksib",
-        "name": "Turkestan–Siberia Line",
-        "waypoints": [
-            {"name": "Arys", "lat": 42.4287345, "lon": 68.7827391, "alt_m": 300},
-            {
-                "name": "Shymkent",
-                "lat": 42.3170027,
-                "lon": 69.5795664,
-                "alt_m": 500,
-            },
-            {"name": "Taraz", "lat": 42.8700107, "lon": 71.3761308, "alt_m": 650},
-            {"name": "Almaty", "lat": 43.2737785, "lon": 76.934677, "alt_m": 800},
-        ],
-        "speed_limits": [
-            {"segment": "Arys → Shymkent", "min_kph": 60, "max_kph": 90},
-            {"segment": "Shymkent → Taraz", "min_kph": 80, "max_kph": 110},
-            {"segment": "Taraz → Almaty", "min_kph": 70, "max_kph": 100},
-        ],
-        "geofences": [
-            {
-                "name": "arys_station",
-                "type": "station",
-                "lat": 42.4287345,
-                "lon": 68.7827391,
-                "radius_m": 5000,
-            },
-            {
-                "name": "shymkent_station",
-                "type": "station",
-                "lat": 42.3170027,
-                "lon": 69.5795664,
-                "radius_m": 5000,
-            },
-            {
-                "name": "taraz_station",
-                "type": "station",
-                "lat": 42.8700107,
-                "lon": 71.3761308,
-                "radius_m": 5000,
-            },
-            {
-                "name": "almaty_turksib_station",
-                "type": "station",
-                "lat": 43.2737785,
-                "lon": 76.934677,
-                "radius_m": 6000,
-            },
-            {
-                "name": "sz_turksib_1",
-                "type": "slow_zone",
-                "lat": 43.05,
-                "lon": 74.0,
-                "radius_m": 12000,
-                "rules": {"speed_limit_kph": 35},
-            },
-        ],
-        "base_serial": 200,
-        "base_train": 2000,
-    },
-    {
-        "line_id": "trans-aral",
-        "name": "Trans‑Aral Railway",
-        "waypoints": [
-            {"name": "Aktobe", "lat": 50.281139, "lon": 57.211977, "alt_m": 220},
-            {
-                "name": "Aralsk",
-                "lat": 46.8009486,
-                "lon": 61.6750584,
-                "alt_m": 65,
-            },
-            {
-                "name": "Kyzylorda",
-                "lat": 44.8544669,
-                "lon": 65.4926015,
-                "alt_m": 130,
-            },
-            {
-                "name": "Turkestan",
-                "lat": 43.2859281,
-                "lon": 68.2132103,
-                "alt_m": 210,
-            },
-            {"name": "Arys", "lat": 42.4287345, "lon": 68.7827391, "alt_m": 300},
-        ],
-        "speed_limits": [
-            {"segment": "Aktobe → Aralsk", "min_kph": 60, "max_kph": 90},
-            {"segment": "Aralsk → Kyzylorda", "min_kph": 70, "max_kph": 100},
-            {"segment": "Kyzylorda → Turkestan", "min_kph": 65, "max_kph": 95},
-            {"segment": "Turkestan → Arys", "min_kph": 60, "max_kph": 85},
-        ],
-        "geofences": [
-            {
-                "name": "aktobe_station",
-                "type": "station",
-                "lat": 50.281139,
-                "lon": 57.211977,
-                "radius_m": 5000,
-            },
-            {
-                "name": "aralsk_station",
-                "type": "station",
-                "lat": 46.8009486,
-                "lon": 61.6750584,
-                "radius_m": 4000,
-            },
-            {
-                "name": "kyzylorda_station",
-                "type": "station",
-                "lat": 44.8544669,
-                "lon": 65.4926015,
-                "radius_m": 5000,
-            },
-            {
-                "name": "turkestan_station",
-                "type": "station",
-                "lat": 43.2859281,
-                "lon": 68.2132103,
-                "radius_m": 4000,
-            },
-            {
-                "name": "arys_ta_station",
-                "type": "station",
-                "lat": 42.4287345,
-                "lon": 68.7827391,
-                "radius_m": 5000,
-            },
-            {
-                "name": "sz_transaral_1",
-                "type": "slow_zone",
-                "lat": 45.8,
-                "lon": 63.5,
-                "radius_m": 14000,
-                "rules": {"speed_limit_kph": 40},
-            },
-        ],
-        "base_serial": 300,
-        "base_train": 3000,
-    },
-    {
-        "line_id": "almaty-dostyk",
-        "name": "Almaty–Dostyk Line",
-        "waypoints": [
-            {"name": "Almaty", "lat": 43.2737785, "lon": 76.934677, "alt_m": 800},
-            {
-                "name": "Aktogay",
-                "lat": 46.9533818,
-                "lon": 79.6815207,
-                "alt_m": 600,
-            },
-            {"name": "Dostyk", "lat": 45.2619021, "lon": 82.465803, "alt_m": 500},
-        ],
-        "speed_limits": [
-            {"segment": "Almaty → Aktogay", "min_kph": 70, "max_kph": 100},
-            {"segment": "Aktogay → Dostyk", "min_kph": 60, "max_kph": 90},
-        ],
-        "geofences": [
-            {
-                "name": "almaty_ad_station",
-                "type": "station",
-                "lat": 43.2737785,
-                "lon": 76.934677,
-                "radius_m": 6000,
-            },
-            {
-                "name": "aktogay_station",
-                "type": "station",
-                "lat": 46.9533818,
-                "lon": 79.6815207,
-                "radius_m": 4000,
-            },
-            {
-                "name": "dostyk_station",
-                "type": "station",
-                "lat": 45.2619021,
-                "lon": 82.465803,
-                "radius_m": 5000,
-            },
-            {
-                "name": "sz_dostyk_1",
-                "type": "slow_zone",
-                "lat": 46.1,
-                "lon": 81.0,
-                "radius_m": 13000,
-                "rules": {"speed_limit_kph": 35},
-            },
-        ],
-        "base_serial": 400,
-        "base_train": 4000,
-    },
-]
-
-
-# ============================================================
-# RAILWAY LINE OBJECT
+# NETWORK GRAPH
 # ============================================================
 
 
-class RailwayLine:
-    def __init__(self, cfg: dict) -> None:
-        self.line_id: str = cfg["line_id"]
-        self.name: str = cfg["name"]
-        self.waypoints_data: list[dict] = cfg["waypoints"]
-        self.speed_limits_data: list[dict] = cfg["speed_limits"]
+@dataclasses.dataclass(frozen=True)
+class Station:
+    station_id: str
+    station_name: str
+    anchor: str
+    lat: float
+    lon: float
+    alt_m: float
+    kind: str
 
-        self.waypoints = [WaypointModel(**w) for w in self.waypoints_data]
-        self.speed_limits = [SpeedLimitModel(**s) for s in self.speed_limits_data]
-        self.geofences: list[GeofenceModel] = []
-        for g in cfg["geofences"]:
-            self.geofences.append(
-                GeofenceModel(
-                    geofence_id=str(
-                        uuid.uuid5(
-                            uuid.NAMESPACE_DNS, f"{self.line_id}:{g['name']}"
-                        )
-                    ),
-                    name=g["name"],
-                    type=g["type"],
-                    center_lat=g["lat"],
-                    center_lon=g["lon"],
-                    radius_m=g["radius_m"],
-                    rules=g.get("rules", {}),
+
+@dataclasses.dataclass(frozen=True)
+class Edge:
+    edge_id: str
+    from_station: str
+    to_station: str
+    edge_type: str
+    length_m: float
+
+
+def densify_graph_edges(
+    stations: list[Station],
+    edges: list[Edge],
+    max_segment_m: float,
+) -> tuple[list[Station], list[Edge]]:
+    if max_segment_m <= 0:
+        return stations, edges
+    by_name: dict[str, Station] = {s.station_name: s for s in stations}
+    out_stations: list[Station] = list(stations)
+    new_edges: list[Edge] = []
+    wp_counter = 0
+
+    for e in edges:
+        sa = by_name.get(e.from_station)
+        sb = by_name.get(e.to_station)
+        if sa is None or sb is None:
+            new_edges.append(e)
+            continue
+        dist = e.length_m
+        if dist <= max_segment_m:
+            new_edges.append(e)
+            continue
+        n_sub = max(2, int(math.ceil(dist / max_segment_m)))
+        prev_name = e.from_station
+        prev_s = sa
+        for k in range(1, n_sub + 1):
+            if k == n_sub:
+                next_name = e.to_station
+                next_s = sb
+            else:
+                t = k / n_sub
+                lat, lon = great_circle_interpolate(
+                    sa.lat, sa.lon, sb.lat, sb.lon, t
+                )
+                wp_counter += 1
+                next_name = f"__waypoint_{wp_counter}"
+                alt = synthetic_altitude(lat, lon)
+                st = Station(
+                    station_id=f"via-{wp_counter}",
+                    station_name=next_name,
+                    anchor=next_name,
+                    lat=lat,
+                    lon=lon,
+                    alt_m=alt,
+                    kind="waypoint",
+                )
+                out_stations.append(st)
+                by_name[next_name] = st
+                next_s = st
+            seg_len = haversine(prev_s.lat, prev_s.lon, next_s.lat, next_s.lon)
+            new_edges.append(
+                Edge(
+                    edge_id=f"{e.edge_id}_s{k-1}",
+                    from_station=prev_name,
+                    to_station=next_name,
+                    edge_type=e.edge_type,
+                    length_m=seg_len,
                 )
             )
+            prev_name = next_name
+            prev_s = next_s
 
-        self.num_segments: int = len(self.waypoints_data) - 1
-        self.segment_names: list[str] = [
-            f"{self.waypoints_data[i]['name']} → {self.waypoints_data[i + 1]['name']}"
-            for i in range(self.num_segments)
-        ]
-        self.segment_lengths_m: list[float] = [
-            haversine(
-                self.waypoints_data[i]["lat"],
-                self.waypoints_data[i]["lon"],
-                self.waypoints_data[i + 1]["lat"],
-                self.waypoints_data[i + 1]["lon"],
+    return out_stations, new_edges
+
+
+def maybe_densify_network(
+    stations: list[Station], edges: list[Edge]
+) -> tuple[list[Station], list[Edge]]:
+    raw = os.environ.get("NETWORK_DENSIFY_MAX_M", "90000")
+    if not raw or raw.strip().lower() in ("0", "off", "false", "no"):
+        return stations, edges
+    try:
+        max_m = float(raw)
+    except ValueError:
+        return stations, edges
+    if max_m <= 0:
+        return stations, edges
+    return densify_graph_edges(stations, edges, max_m)
+
+
+class GraphNetwork:
+    def __init__(self, stations: list[Station], edges: list[Edge]) -> None:
+        self.network_id = NETWORK_ID
+        self.name = NETWORK_NAME
+        self.stations_by_name: dict[str, Station] = {
+            s.station_name: s for s in stations
+        }
+        self.station_names: list[str] = sorted(self.stations_by_name.keys())
+        self.station_models: list[StationModel] = [
+            StationModel(
+                station_id=s.station_id,
+                station_name=s.station_name,
+                anchor=s.anchor,
+                lat=s.lat,
+                lon=s.lon,
+                alt_m=s.alt_m,
+                kind=s.kind,
             )
-            for i in range(self.num_segments)
+            for s in stations
         ]
-        self.total_distance_km: float = sum(self.segment_lengths_m) / 1000.0
+        self.geofences: list[GeofenceModel] = [
+            GeofenceModel(
+                geofence_id=str(
+                    uuid.uuid5(uuid.NAMESPACE_DNS, f"station:{s.station_name}")
+                ),
+                name=f"{slugify_station(s.station_name)}_station",
+                type="station",
+                center_lat=s.lat,
+                center_lon=s.lon,
+                radius_m=STATION_GEOFENCE_RADIUS_M,
+            )
+            for s in stations
+        ]
+        self.geofence_by_station: dict[str, GeofenceModel] = {
+            s.station_name: gf for s, gf in zip(stations, self.geofences)
+        }
+        self.edges_by_pair: dict[frozenset[str], Edge] = {}
+        self.edge_models: list[EdgeModel] = []
+        self.adj: dict[str, list[tuple[str, float, Edge]]] = {
+            s.station_name: [] for s in stations
+        }
+        for edge in edges:
+            key = frozenset((edge.from_station, edge.to_station))
+            self.edges_by_pair[key] = edge
+            self.edge_models.append(
+                EdgeModel(
+                    edge_id=edge.edge_id,
+                    from_station=edge.from_station,
+                    to_station=edge.to_station,
+                    edge_type=edge.edge_type,
+                    approx_km=round(edge.length_m / 1000.0, 1),
+                )
+            )
+            self.adj[edge.from_station].append((edge.to_station, edge.length_m, edge))
+            self.adj[edge.to_station].append((edge.from_station, edge.length_m, edge))
+        self.total_distance_km = round(sum(e.length_m for e in edges) / 1000.0, 1)
 
-    def info_model(self, num_locos: int) -> dict:
-        return RailwayLineInfo(
-            line_id=self.line_id,
-            name=self.name,
-            waypoints=self.waypoints,
-            speed_limits=self.speed_limits,
-            geofences=self.geofences,
-            total_distance_km=round(self.total_distance_km, 1),
-            num_locomotives=num_locos,
-        ).model_dump()
+    @classmethod
+    def load(cls) -> "GraphNetwork":
+        here = Path(__file__).resolve().parent
+        candidates_json = [
+            os.environ.get(NETWORK_JSON_ENV),
+            str(here / "kz_railway_network.json"),
+            str(here / "kz_synthetic_network_150_244.json"),
+            str(here / "kz_synthetic_network_150_244(2).json"),
+            "/mnt/data/kz_synthetic_network_150_244.json",
+        ]
+        for path_str in candidates_json:
+            if not path_str:
+                continue
+            p = Path(path_str)
+            if p.exists():
+                with p.open("r", encoding="utf-8") as f:
+                    payload = json.load(f)
+                stations: list[Station] = []
+                for raw in payload["stations"]:
+                    stations.append(
+                        Station(
+                            station_id=str(raw["station_id"]),
+                            station_name=raw["station_name"],
+                            anchor=raw.get("anchor", raw["station_name"]),
+                            lat=float(raw["lat"]),
+                            lon=float(raw["lon"]),
+                            alt_m=float(raw.get("alt_m") or synthetic_altitude(float(raw["lat"]), float(raw["lon"]))),
+                            kind=raw.get("kind", "synthetic"),
+                        )
+                    )
+                edges: list[Edge] = []
+                for raw in payload["edges"]:
+                    a = raw["from_station"]
+                    b = raw["to_station"]
+                    sa, sb = next(s for s in stations if s.station_name == a), next(s for s in stations if s.station_name == b)
+                    length_m = haversine(sa.lat, sa.lon, sb.lat, sb.lon)
+                    edges.append(
+                        Edge(
+                            edge_id=str(raw["edge_id"]),
+                            from_station=a,
+                            to_station=b,
+                            edge_type=raw.get("edge_type", "corridor"),
+                            length_m=length_m,
+                        )
+                    )
+                stations, edges = maybe_densify_network(stations, edges)
+                return cls(stations, edges)
+
+        import csv
+
+        env_s = os.environ.get(NETWORK_STATIONS_ENV)
+        env_e = os.environ.get(NETWORK_EDGES_ENV)
+        csv_pairs: list[tuple[str, str]] = []
+        if env_s and env_e:
+            csv_pairs.append((env_s, env_e))
+        csv_pairs.extend(
+            [
+                (
+                    str(here / "kz_synthetic_stations_150.csv"),
+                    str(here / "kz_synthetic_edges_244.csv"),
+                ),
+                (
+                    str(here / "kz_synthetic_stations_150(2).csv"),
+                    str(here / "kz_synthetic_edges_244(1).csv"),
+                ),
+                (
+                    "/mnt/data/kz_synthetic_stations_150.csv",
+                    "/mnt/data/kz_synthetic_edges_244.csv",
+                ),
+            ]
+        )
+        stations_csv: str | None = None
+        edges_csv: str | None = None
+        for sc, ec in csv_pairs:
+            if Path(sc).exists() and Path(ec).exists():
+                stations_csv, edges_csv = sc, ec
+                break
+        if stations_csv is None or edges_csv is None:
+            raise RuntimeError("Network files not found. Provide NETWORK_JSON_PATH or CSV paths.")
+
+        stations: list[Station] = []
+        with open(stations_csv, newline="", encoding="utf-8") as f:
+            for raw in csv.DictReader(f):
+                lat = float(raw["lat"])
+                lon = float(raw["lon"])
+                stations.append(
+                    Station(
+                        station_id=str(raw["station_id"]),
+                        station_name=raw["station_name"],
+                        anchor=raw.get("anchor", raw["station_name"]),
+                        lat=lat,
+                        lon=lon,
+                        alt_m=synthetic_altitude(lat, lon),
+                        kind=raw.get("kind", "synthetic"),
+                    )
+                )
+        stations_by_name = {s.station_name: s for s in stations}
+        edges: list[Edge] = []
+        with open(edges_csv, newline="", encoding="utf-8") as f:
+            for raw in csv.DictReader(f):
+                a = raw["from_station"]
+                b = raw["to_station"]
+                sa = stations_by_name[a]
+                sb = stations_by_name[b]
+                edges.append(
+                    Edge(
+                        edge_id=str(raw["edge_id"]),
+                        from_station=a,
+                        to_station=b,
+                        edge_type=raw.get("edge_type", "corridor"),
+                        length_m=haversine(sa.lat, sa.lon, sb.lat, sb.lon),
+                    )
+                )
+        stations, edges = maybe_densify_network(stations, edges)
+        return cls(stations, edges)
+
+    def shortest_path(self, start: str, end: str) -> tuple[list[str], float]:
+        if start == end:
+            return [start], 0.0
+        if start not in self.adj or end not in self.adj:
+            return [], math.inf
+        heap: list[tuple[float, str]] = [(0.0, start)]
+        dist: dict[str, float] = {start: 0.0}
+        prev: dict[str, str] = {}
+        seen: set[str] = set()
+        while heap:
+            cur_dist, node = heapq.heappop(heap)
+            if node in seen:
+                continue
+            seen.add(node)
+            if node == end:
+                break
+            for nxt, weight, _edge in self.adj[node]:
+                nd = cur_dist + weight
+                if nd < dist.get(nxt, math.inf):
+                    dist[nxt] = nd
+                    prev[nxt] = node
+                    heapq.heappush(heap, (nd, nxt))
+        if end not in dist:
+            return [], math.inf
+        path = [end]
+        cur = end
+        while cur != start:
+            cur = prev[cur]
+            path.append(cur)
+        path.reverse()
+        return path, dist[end]
+
+    def pick_random_trip(
+        self,
+        exclude_origin: str | None = None,
+        min_distance_km: float = MIN_ROUTE_DISTANCE_KM,
+    ) -> tuple[str, str, list[str], float]:
+        names = [
+            n
+            for n in self.station_names
+            if self.stations_by_name[n].kind != "waypoint"
+        ]
+        if not names:
+            names = self.station_names
+        for _ in range(MAX_ROUTE_RETRIES):
+            origin = exclude_origin or random.choice(names)
+            destination = random.choice(names)
+            if destination == origin:
+                continue
+            path, dist_m = self.shortest_path(origin, destination)
+            if len(path) >= 2 and dist_m >= min_distance_km * 1000.0:
+                return origin, destination, path, dist_m
+            if exclude_origin is not None:
+                origin = exclude_origin
+        # fallback: any reachable pair
+        while True:
+            origin = exclude_origin or random.choice(names)
+            destination = random.choice(names)
+            if destination == origin:
+                continue
+            path, dist_m = self.shortest_path(origin, destination)
+            if len(path) >= 2:
+                return origin, destination, path, dist_m
+
+    def edge_for(self, a: str, b: str) -> Edge:
+        edge = self.edges_by_pair.get(frozenset((a, b)))
+        if edge is None:
+            raise KeyError(f"Edge not found for {a} <-> {b}")
+        return edge
 
 
-RAILWAY_LINES: dict[str, RailwayLine] = {}
-for _cfg in LINES_CONFIG:
-    _rl = RailwayLine(_cfg)
-    RAILWAY_LINES[_rl.line_id] = _rl
+NETWORK = GraphNetwork.load()
 
 
 # ============================================================
@@ -574,18 +651,24 @@ for _cfg in LINES_CONFIG:
 # ============================================================
 
 
-class RouteEngine:
+class GraphRouteEngine:
     def __init__(
         self,
-        line: RailwayLine,
-        segment_index: int = 0,
-        segment_progress: float = 0.0,
-        direction: str = "forward",
+        network: GraphNetwork,
+        origin_station: str,
+        destination_station: str,
+        path_stations: list[str],
+        route_distance_m: float,
+        initial_edge_progress: float = 0.0,
     ) -> None:
-        self.line = line
-        self.direction = direction
-        self.segment_index: int = int(clamp(segment_index, 0, line.num_segments - 1))
-        self.segment_progress: float = clamp(segment_progress, 0.0, 0.999)
+        self.network = network
+        self.trip_id: str = str(uuid.uuid4())
+        self.origin_station = origin_station
+        self.destination_station = destination_station
+        self.path_stations = list(path_stations)
+        self.route_distance_m = route_distance_m
+        self.edge_index: int = 0
+        self.edge_progress: float = clamp(initial_edge_progress, 0.0, 0.98)
         self.lat: float = 0.0
         self.lon: float = 0.0
         self.alt_m: float = 0.0
@@ -593,85 +676,75 @@ class RouteEngine:
         self.distance_to_next_wp_km: float = 0.0
         self.active_geofences: list[GeofenceModel] = []
         self._prev_gf_names: set[str] = set()
-        self._interpolate()
+        self._sync_position()
 
-    def _wp_start(self) -> dict:
-        return (
-            self.line.waypoints_data[self.segment_index]
-            if self.direction == "forward"
-            else self.line.waypoints_data[self.segment_index + 1]
-        )
+    @property
+    def num_segments(self) -> int:
+        return max(0, len(self.path_stations) - 1)
 
-    def _wp_end(self) -> dict:
-        return (
-            self.line.waypoints_data[self.segment_index + 1]
-            if self.direction == "forward"
-            else self.line.waypoints_data[self.segment_index]
-        )
-
-    def _seg_len(self) -> float:
-        return self.line.segment_lengths_m[self.segment_index]
-
-    def segment_name(self) -> str:
-        return self.line.segment_names[self.segment_index]
+    def current_station_name(self) -> str:
+        return self.path_stations[self.edge_index]
 
     def next_waypoint_name(self) -> str:
-        return self._wp_end()["name"]
+        if self.num_segments == 0:
+            return self.path_stations[0]
+        return self.path_stations[min(self.edge_index + 1, len(self.path_stations) - 1)]
 
-    def _interpolate(self) -> None:
-        ws, we = self._wp_start(), self._wp_end()
-        t = clamp(self.segment_progress, 0.0, 1.0)
-        self.lat = lerp(ws["lat"], we["lat"], t)
-        self.lon = lerp(ws["lon"], we["lon"], t)
-        self.alt_m = lerp(ws["alt_m"], we["alt_m"], t)
-        self.heading_deg = bearing(self.lat, self.lon, we["lat"], we["lon"])
-        self.distance_to_next_wp_km = (
-            haversine(self.lat, self.lon, we["lat"], we["lon"]) / 1000.0
+    def segment_name(self) -> str:
+        return f"{self.current_station_name()} → {self.next_waypoint_name()}"
+
+    def current_edge(self) -> Edge:
+        return self.network.edge_for(self.current_station_name(), self.next_waypoint_name())
+
+    def current_edge_length_m(self) -> float:
+        return self.current_edge().length_m
+
+    def remaining_route_distance_m(self) -> float:
+        if self.num_segments == 0:
+            return 0.0
+        rem = self.current_edge_length_m() * (1.0 - self.edge_progress)
+        for idx in range(self.edge_index + 1, self.num_segments):
+            edge = self.network.edge_for(self.path_stations[idx], self.path_stations[idx + 1])
+            rem += edge.length_m
+        return rem
+
+    def at_final_destination(self) -> bool:
+        return (
+            self.edge_index >= self.num_segments - 1
+            and self.distance_to_next_wp_km * 1000.0 <= ARRIVAL_THRESHOLD_M
         )
 
-    def update(self, speed_kph: float) -> tuple[bool, bool]:
-        dist_m = speed_kph / 3.6 * TICK_INTERVAL
-        seg_len = self._seg_len()
-        if seg_len > 0:
-            self.segment_progress += dist_m / seg_len
-        seg_changed = False
-        route_reversed = False
-        if self.segment_progress >= 1.0:
-            self.segment_progress = 0.0
-            seg_changed = True
-            if self.direction == "forward":
-                if self.segment_index < self.line.num_segments - 1:
-                    self.segment_index += 1
-                else:
-                    self.direction = "reverse"
-                    route_reversed = True
-            else:
-                if self.segment_index > 0:
-                    self.segment_index -= 1
-                else:
-                    self.direction = "forward"
-                    route_reversed = True
-        self._interpolate()
-        self._update_geofences()
-        return seg_changed, route_reversed
+    def track_grade_pct(self) -> float:
+        a = self.network.stations_by_name[self.current_station_name()]
+        b = self.network.stations_by_name[self.next_waypoint_name()]
+        seg_len = max(self.current_edge_length_m(), 1.0)
+        grade = (b.alt_m - a.alt_m) / seg_len * 100.0
+        return jitter(grade, 0.04)
 
-    def _update_geofences(self) -> None:
-        self._prev_gf_names = {gf.name for gf in self.active_geofences}
-        self.active_geofences = [
-            gf
-            for gf in self.line.geofences
-            if haversine(self.lat, self.lon, gf.center_lat, gf.center_lon)
-            <= gf.radius_m
-        ]
+    def in_slow_zone(self) -> tuple[bool, float]:
+        edge_type = self.current_edge().edge_type
+        if edge_type == "local":
+            return False, 55.0
+        return False, 999.0
+
+    def in_station_geofence(self) -> bool:
+        return any(gf.type == "station" for gf in self.active_geofences)
+
+    def approaching_station(self, threshold_m: float = APPROACH_THRESHOLD_M) -> bool:
+        return self.distance_to_next_wp_km * 1000.0 <= threshold_m
+
+    def at_endpoint(self, threshold_m: float = ARRIVAL_THRESHOLD_M) -> bool:
+        return self.distance_to_next_wp_km * 1000.0 <= threshold_m
+
+    def active_geofence_names(self) -> list[str]:
+        return [gf.name for gf in self.active_geofences]
 
     def geofence_entered(self) -> list[GeofenceModel]:
-        return [
-            gf for gf in self.active_geofences if gf.name not in self._prev_gf_names
-        ]
+        return [gf for gf in self.active_geofences if gf.name not in self._prev_gf_names]
 
     def geofence_exited_names(self) -> list[str]:
-        cur = {gf.name for gf in self.active_geofences}
-        return [n for n in self._prev_gf_names if n not in cur]
+        current = {gf.name for gf in self.active_geofences}
+        return [n for n in self._prev_gf_names if n not in current]
 
     def primary_geofence(self) -> GeofenceModel | None:
         for gf in self.active_geofences:
@@ -679,40 +752,72 @@ class RouteEngine:
                 return gf
         return self.active_geofences[0] if self.active_geofences else None
 
-    def active_geofence_names(self) -> list[str]:
-        return [gf.name for gf in self.active_geofences]
+    def reset_trip(self, origin_station: str, destination_station: str, path_stations: list[str], route_distance_m: float) -> None:
+        self.trip_id = str(uuid.uuid4())
+        self.origin_station = origin_station
+        self.destination_station = destination_station
+        self.path_stations = list(path_stations)
+        self.route_distance_m = route_distance_m
+        self.edge_index = 0
+        self.edge_progress = 0.0
+        self._sync_position()
 
-    def track_grade_pct(self) -> float:
-        ws, we = self._wp_start(), self._wp_end()
-        sl = self._seg_len()
-        if sl == 0:
-            return 0.0
-        g = (we["alt_m"] - ws["alt_m"]) / sl * 100.0
-        return jitter(-g if self.direction == "reverse" else g, 0.05)
-
-    def in_slow_zone(self) -> tuple[bool, float]:
-        for gf in self.active_geofences:
-            if gf.type == "slow_zone":
-                return True, float(gf.rules.get("speed_limit_kph", 40))
-        return False, 999.0
-
-    def in_station_geofence(self) -> bool:
-        return any(gf.type == "station" for gf in self.active_geofences)
-
-    def approaching_station(self, threshold_m: float = 12000.0) -> bool:
-        we = self._wp_end()
-        d = haversine(self.lat, self.lon, we["lat"], we["lon"])
-        if d > threshold_m:
-            return False
-        name_lower = we["name"].lower()
-        return any(
-            gf.type == "station" and name_lower in gf.name
-            for gf in self.line.geofences
+    def _sync_position(self) -> None:
+        if self.num_segments == 0:
+            station = self.network.stations_by_name[self.path_stations[0]]
+            self.lat = station.lat
+            self.lon = station.lon
+            self.alt_m = station.alt_m
+            self.heading_deg = 0.0
+            self.distance_to_next_wp_km = 0.0
+            self._update_geofences()
+            return
+        start = self.network.stations_by_name[self.current_station_name()]
+        end = self.network.stations_by_name[self.next_waypoint_name()]
+        t = clamp(self.edge_progress, 0.0, 1.0)
+        self.lat, self.lon = great_circle_interpolate(
+            start.lat, start.lon, end.lat, end.lon, t
         )
+        self.alt_m = lerp(start.alt_m, end.alt_m, t)
+        self.heading_deg = bearing(self.lat, self.lon, end.lat, end.lon)
+        self.distance_to_next_wp_km = haversine(self.lat, self.lon, end.lat, end.lon) / 1000.0
+        self._update_geofences()
 
-    def at_endpoint(self, threshold_m: float = 1500.0) -> bool:
-        we = self._wp_end()
-        return haversine(self.lat, self.lon, we["lat"], we["lon"]) <= threshold_m
+    def _update_geofences(self) -> None:
+        self._prev_gf_names = {gf.name for gf in self.active_geofences}
+        current: list[GeofenceModel] = []
+        for station_name in {self.current_station_name(), self.next_waypoint_name()}:
+            station = self.network.stations_by_name[station_name]
+            if haversine(self.lat, self.lon, station.lat, station.lon) <= STATION_GEOFENCE_RADIUS_M:
+                current.append(self.network.geofence_by_station[station_name])
+        self.active_geofences = current
+
+    def update(self, speed_kph: float) -> tuple[bool, bool]:
+        if self.num_segments == 0:
+            self._sync_position()
+            return False, False
+        remaining_dist_m = max(0.0, speed_kph / 3.6 * TICK_INTERVAL)
+        seg_changed = False
+        destination_reached = False
+        while remaining_dist_m > 0 and self.num_segments > 0:
+            edge_len = self.current_edge_length_m()
+            rem_on_edge = edge_len * (1.0 - self.edge_progress)
+            if rem_on_edge <= 0.01:
+                rem_on_edge = 0.01
+            if remaining_dist_m < rem_on_edge:
+                self.edge_progress += remaining_dist_m / edge_len
+                remaining_dist_m = 0.0
+            else:
+                remaining_dist_m -= rem_on_edge
+                self.edge_progress = 1.0
+                seg_changed = True
+                if self.edge_index >= self.num_segments - 1:
+                    destination_reached = True
+                    break
+                self.edge_index += 1
+                self.edge_progress = 0.0
+        self._sync_position()
+        return seg_changed, destination_reached
 
 
 # ============================================================
@@ -912,9 +1017,8 @@ def _rule_fires(rule: dict, value: Any) -> bool:
 
 
 class AlertEngine:
-    def __init__(self, locomotive_id: str, line_id: str) -> None:
+    def __init__(self, locomotive_id: str) -> None:
         self.locomotive_id = locomotive_id
-        self.line_id = line_id
         self.active_alerts: dict[str, tuple[str, str]] = {}
 
     def evaluate(
@@ -952,7 +1056,6 @@ class AlertEngine:
                         event_id=str(uuid.uuid4()),
                         ts=utcnow_iso(),
                         locomotive_id=self.locomotive_id,
-                        line_id=self.line_id,
                         severity=sev,
                         event_type="alert",
                         code=code,
@@ -966,7 +1069,6 @@ class AlertEngine:
                         event_id=str(uuid.uuid4()),
                         ts=utcnow_iso(),
                         locomotive_id=self.locomotive_id,
-                        line_id=self.line_id,
                         severity="info",
                         event_type="alert",
                         code="ALERT_RESOLVED",
@@ -986,9 +1088,9 @@ class AlertEngine:
 
 
 # ============================================================
-# ANOMALY MANAGER  — v3.1 REWRITE
+# ANOMALY MANAGER
 # ============================================================
-# ── v3.1: added rpm_surge & main_reservoir_drop ──
+
 _ANOMALY_TYPES = [
     "brake_pressure_drift",
     "leak_rate_increase",
@@ -1046,16 +1148,6 @@ class _AnomalySlot:
 
 
 class AnomalyManager:
-    """
-    v3.1 changes vs v3.0
-    ─────────────────────
-    • Supports up to 2 simultaneous anomalies per locomotive
-    • Cooldowns shortened 8× (60-300 ticks = 30s-2.5min)
-    • Spawn probability raised to 35 %
-    • Severity weights shifted toward moderate/severe (35/40/25)
-    • Onset faster (8-25), peak longer (40-160), recovery faster (15-50)
-    """
-
     MAX_PER_LOCO: int = 2
 
     def __init__(self) -> None:
@@ -1063,8 +1155,6 @@ class AnomalyManager:
         self._cooldown: int = random.randint(60, 300)
         self._ticks: int = 0
         self._next_check: int = random.randint(60, 300)
-
-    # ── helpers ──
 
     def has_type(self, atype: str) -> bool:
         return any(a.atype == atype for a in self.active)
@@ -1078,7 +1168,6 @@ class AnomalyManager:
         atype: str | None = None,
         severity: str | None = None,
     ) -> _AnomalySlot | None:
-        """Force-inject an anomaly (for /inject endpoint)."""
         if len(self.active) >= self.MAX_PER_LOCO:
             return None
         at = atype or random.choice(_ANOMALY_TYPES)
@@ -1087,11 +1176,8 @@ class AnomalyManager:
         self.active.append(slot)
         return slot
 
-    # ── tick ──
-
     def tick(self, allow_new: bool = True) -> None:
         self._ticks += 1
-        # advance existing
         done_indices: list[int] = []
         for i, slot in enumerate(self.active):
             slot.tick()
@@ -1113,7 +1199,6 @@ class AnomalyManager:
                 self._spawn()
 
     def _spawn(self) -> None:
-        # avoid duplicating the same type
         existing_types = {a.atype for a in self.active}
         candidates = [t for t in _ANOMALY_TYPES if t not in existing_types]
         if not candidates:
@@ -1183,63 +1268,71 @@ class AnomalyManager:
 # ============================================================
 
 
-def _generate_loco_configs(line_cfg: dict, line: RailwayLine) -> list[dict]:
-    configs = []
-    ns = line.num_segments
-    for i in range(LOCOS_PER_LINE):
-        frac = (i + 0.5) / LOCOS_PER_LINE
-        seg_f = frac * ns
-        seg_idx = min(int(seg_f), ns - 1)
-        seg_prog = seg_f - seg_idx
-        seg_prog = clamp(seg_prog, 0.06, 0.94)
-        direction = "reverse" if i in (2, 5, 8) else "forward"
+def speed_range_for_edge(edge_type: str, distance_km: float) -> tuple[float, float]:
+    if edge_type == "express":
+        return (80.0, 115.0) if distance_km >= 120 else (75.0, 105.0)
+    if edge_type == "corridor":
+        if distance_km >= 250:
+            return 75.0, 100.0
+        return 65.0, 90.0
+    if distance_km >= 60:
+        return 45.0, 70.0
+    return 30.0, 55.0
+
+
+def _generate_loco_configs() -> list[dict]:
+    configs: list[dict] = []
+    for i in range(FLEET_SIZE):
+        model = _MODEL_ROTATION[i % len(_MODEL_ROTATION)]
+        suffix = 5001 + i
         configs.append(
             {
-                "serial": f"TE33A-{line_cfg['base_serial'] + i + 1:04d}",
-                "train_id": f"TRN-{line_cfg['base_train'] + i + 1}",
-                "line_id": line.line_id,
-                "seg_idx": seg_idx,
-                "seg_prog": round(seg_prog, 3),
-                "direction": direction,
+                "serial": f"{model}-{1001 + i:04d}",
+                "train_id": f"{model}-{suffix}",
             }
         )
     return configs
 
 
 class LocomotiveRuntime:
-    def __init__(self, config: dict, line: RailwayLine) -> None:
+    def __init__(
+        self, config: dict, network: GraphNetwork, seq_slot: int = 0
+    ) -> None:
+        self.network = network
         self.locomotive_id: str = str(uuid.uuid5(_LOCO_NS, config["serial"]))
         self.serial_number: str = config["serial"]
         self.train_id: str = config["train_id"]
+        self.created_at: str = utcnow_iso()
         self.train_run_id: str = str(
             uuid.uuid5(_LOCO_NS, f"{config['train_id']}:run")
         )
-        self.line_id: str = line.line_id
-        self.line_name: str = line.name
-        self.line: RailwayLine = line
-        now_iso = utcnow_iso()
-        self.created_at: str = now_iso
-
-        self.route = RouteEngine(
-            line, config["seg_idx"], config["seg_prog"], config["direction"]
+        origin, destination, path, dist_m = network.pick_random_trip()
+        initial_progress = 0.0 if SINGLE_TRAIN_MODE else random.uniform(0.03, 0.85)
+        self.route = GraphRouteEngine(
+            network, origin, destination, path, dist_m, initial_progress
         )
-        self.alert_engine = AlertEngine(self.locomotive_id, self.line_id)
+
+        self.alert_engine = AlertEngine(self.locomotive_id)
         self.anomaly_mgr = AnomalyManager()
 
-        self.history_buffer: collections.deque = collections.deque(
-            maxlen=HISTORY_MAXLEN
-        )
+        self.history_buffer: collections.deque = collections.deque(maxlen=HISTORY_MAXLEN)
         self.event_log: collections.deque = collections.deque(maxlen=EVENT_MAXLEN)
 
-        self.seq: int = 0
+        self.seq: int = int(time.time()) * 1000 + seq_slot * 10_000_000
         self.mode: str = "cruising"
+        self._station_wait_ticks: int = 0
+        self._station_timer: int = 0
+        self._just_arrived_final: bool = False
 
-        sl = line.speed_limits_data[
-            min(config["seg_idx"], len(line.speed_limits_data) - 1)
-        ]
-        self.target_speed: float = random.uniform(sl["min_kph"], sl["max_kph"])
-        self.speed_kph: float = self.target_speed * random.uniform(0.92, 1.0)
-        self.throttle_pct: float = 0.35
+        cur_edge = self.route.current_edge()
+        if SINGLE_TRAIN_MODE:
+            self.target_speed = SINGLE_TRAIN_SPEED_KPH
+            self.speed_kph = SINGLE_TRAIN_SPEED_KPH
+        else:
+            lo, hi = speed_range_for_edge(cur_edge.edge_type, cur_edge.length_m / 1000.0)
+            self.target_speed = random.uniform(lo, hi)
+            self.speed_kph = self.target_speed * random.uniform(0.90, 0.98)
+        self.throttle_pct: float = 0.34
         self.brake_demand: float = 0.0
 
         self.engine_rpm: float = jitter(700.0, 20)
@@ -1275,38 +1368,60 @@ class LocomotiveRuntime:
         self.alarm_status: str = "normal"
         self.fault_codes: list[str] = []
 
-        self._station_wait_ticks: int = 0
-        self._station_timer: int = 0
-
         self.latest_telemetry: dict | None = None
         self.current_state_snapshot: dict | None = None
 
         self.locomotive_model = LocomotiveModel(
             locomotive_id=self.locomotive_id,
             serial_number=self.serial_number,
-            line_id=self.line_id,
-            line_name=self.line_name,
+            network_id=network.network_id,
+            network_name=network.name,
             created_at=self.created_at,
         )
         self.train_run_model = TrainRunModel(
             train_run_id=self.train_run_id,
             train_id=self.train_id,
             locomotive_id=self.locomotive_id,
-            route_id=self.line_id,
-            line_id=self.line_id,
+            route_id=self.route.trip_id,
             started_at=self.created_at,
         )
 
-        # ── v3.1: 25 % of locos start with a pre-existing anomaly ──
-        if random.random() < 0.25:
+        if not SINGLE_TRAIN_MODE and random.random() < 0.25:
             self.anomaly_mgr.inject()
 
         self._emit_event(
             "info",
             "system",
             "SIM_STARTED",
-            f"Locomotive {self.serial_number} started on {self.line_name}",
+            f"Locomotive {self.serial_number} started trip {self.route.origin_station} → {self.route.destination_station}",
+            {
+                "origin_station": self.route.origin_station,
+                "destination_station": self.route.destination_station,
+                "path_stations": self.route.path_stations,
+            },
         )
+
+    def _route_path_coordinates(self) -> list[list[float]]:
+        path = self.route.path_stations
+        if len(path) < 2:
+            if len(path) == 1:
+                st = self.network.stations_by_name[path[0]]
+                return [[round(st.lon, 6), round(st.lat, 6)]]
+            return []
+        out: list[list[float]] = []
+        for i in range(len(path) - 1):
+            sa = self.network.stations_by_name[path[i]]
+            sb = self.network.stations_by_name[path[i + 1]]
+            dist_m = haversine(sa.lat, sa.lon, sb.lat, sb.lon)
+            n = max(2, int(math.ceil(dist_m / ROUTE_DISPLAY_SAMPLE_STEP_M)))
+            start_k = 1 if i > 0 else 0
+            for k in range(start_k, n + 1):
+                t = k / n
+                lat, lon = great_circle_interpolate(
+                    sa.lat, sa.lon, sb.lat, sb.lon, t
+                )
+                out.append([round(lon, 6), round(lat, 6)])
+        return out
 
     def _emit_event(
         self,
@@ -1321,7 +1436,6 @@ class LocomotiveRuntime:
                 event_id=str(uuid.uuid4()),
                 ts=utcnow_iso(),
                 locomotive_id=self.locomotive_id,
-                line_id=self.line_id,
                 severity=severity,
                 event_type=etype,
                 code=code,
@@ -1330,88 +1444,55 @@ class LocomotiveRuntime:
             ).model_dump()
         )
 
-    # ── state machine ──
+    def _assign_new_trip(self) -> None:
+        current_station = self.route.destination_station
+        origin, destination, path, dist_m = self.network.pick_random_trip(
+            exclude_origin=current_station
+        )
+        origin = current_station
+        path, dist_m = self.network.shortest_path(origin, destination)
+        self.route.reset_trip(origin, destination, path, dist_m)
+        self.train_run_id = str(uuid.uuid4())
+        self.train_run_model = TrainRunModel(
+            train_run_id=self.train_run_id,
+            train_id=self.train_id,
+            locomotive_id=self.locomotive_id,
+            route_id=self.route.trip_id,
+            started_at=utcnow_iso(),
+        )
+        self._emit_event(
+            "info",
+            "trip",
+            "NEW_TRIP_ASSIGNED",
+            f"New trip assigned: {origin} → {destination}",
+            {
+                "origin_station": origin,
+                "destination_station": destination,
+                "path_stations": path,
+                "distance_km": round(dist_m / 1000.0, 1),
+            },
+        )
+        self._set_target()
 
-    def _update_mode(self) -> None:
-        old = self.mode
-
-        if self.mode in ("station_stop", "depot_stop", "idle_hold"):
-            self._station_timer += 1
-            if self._station_timer >= self._station_wait_ticks:
-                self.mode = "accelerating"
-                self._set_target()
-                self._emit_event(
-                    "info",
-                    "status",
-                    "DEPARTED_STATION",
-                    f"Departed from {self.route.next_waypoint_name()}",
-                    {"waypoint": self.route.next_waypoint_name()},
-                )
-            self._emit_mode_change(old)
+    def _set_target(self) -> None:
+        if SINGLE_TRAIN_MODE:
+            self.target_speed = SINGLE_TRAIN_SPEED_KPH
             return
+        edge = self.route.current_edge()
+        lo, hi = speed_range_for_edge(edge.edge_type, edge.length_m / 1000.0)
+        if self.route.remaining_route_distance_m() < 35_000:
+            hi = min(hi, 80.0)
+        self.target_speed = random.uniform(lo, hi)
 
-        in_slow, slow_lim = self.route.in_slow_zone()
-        approaching = self.route.approaching_station(threshold_m=12000.0)
-        in_station = self.route.in_station_geofence()
-        at_end = self.route.at_endpoint(threshold_m=1500.0)
-
-        if self.mode == "accelerating":
-            if in_slow and self.speed_kph > slow_lim:
-                self.mode = "braking"
-                self.target_speed = slow_lim
-            elif approaching and in_station:
-                self.mode = "braking"
-                self.target_speed = 0.0
-            elif self.speed_kph >= self.target_speed * 0.95:
-                self.mode = "slow_zone" if in_slow else "cruising"
-
-        elif self.mode == "cruising":
-            self._smooth_target()
-            if in_slow and self.speed_kph > slow_lim:
-                self.mode = "braking"
-                self.target_speed = slow_lim
-            elif approaching and in_station:
-                self.mode = "braking"
-                self.target_speed = 0.0
-
-        elif self.mode == "slow_zone":
-            if not in_slow:
-                self.mode = "accelerating"
-                self._set_target()
-            elif approaching and in_station:
-                self.mode = "braking"
-                self.target_speed = 0.0
-
-        elif self.mode == "braking":
-            if at_end and in_station and self.speed_kph < 2.0:
-                self.speed_kph = 0.0
-                self.mode = "station_stop"
-                self._station_wait_ticks = random.randint(30, 90)
-                self._station_timer = 0
-                wp = self.route.next_waypoint_name()
-                self._emit_event(
-                    "info",
-                    "status",
-                    "ARRIVED_STATION",
-                    f"Arrived at {wp}",
-                    {"waypoint": wp},
-                )
-            elif (
-                in_slow
-                and self.target_speed > 0
-                and self.speed_kph <= self.target_speed * 1.05
-            ):
-                self.mode = "slow_zone"
-            elif (
-                not approaching
-                and not in_slow
-                and self.speed_kph < 5.0
-                and not at_end
-            ):
-                self.mode = "accelerating"
-                self._set_target()
-
-        self._emit_mode_change(old)
+    def _smooth_target(self) -> None:
+        if SINGLE_TRAIN_MODE:
+            return
+        edge = self.route.current_edge()
+        lo, hi = speed_range_for_edge(edge.edge_type, edge.length_m / 1000.0)
+        if self.route.remaining_route_distance_m() < 20_000:
+            hi = min(hi, 75.0)
+        new_t = random.uniform(lo, hi)
+        self.target_speed = self.target_speed * 0.985 + new_t * 0.015
 
     def _emit_mode_change(self, old: str) -> None:
         if self.mode != old:
@@ -1423,28 +1504,127 @@ class LocomotiveRuntime:
                 {"old_mode": old, "new_mode": self.mode},
             )
 
-    def _set_target(self) -> None:
-        idx = self.route.segment_index
-        sl = self.line.speed_limits_data[
-            min(idx, len(self.line.speed_limits_data) - 1)
-        ]
-        self.target_speed = random.uniform(sl["min_kph"], sl["max_kph"])
+    def _update_mode(self) -> None:
+        old = self.mode
 
-    def _smooth_target(self) -> None:
-        idx = self.route.segment_index
-        sl = self.line.speed_limits_data[
-            min(idx, len(self.line.speed_limits_data) - 1)
-        ]
-        new_t = random.uniform(sl["min_kph"], sl["max_kph"])
-        self.target_speed = self.target_speed * 0.99 + new_t * 0.01
+        if self.mode in ("station_stop", "depot_stop", "idle_hold"):
+            self._station_timer += 1
+            if self._station_timer >= self._station_wait_ticks:
+                if self._just_arrived_final:
+                    self._assign_new_trip()
+                    self._just_arrived_final = False
+                self.mode = "accelerating"
+                self._set_target()
+                self._emit_event(
+                    "info",
+                    "status",
+                    "DEPARTED_STATION",
+                    f"Departed from {self.route.current_station_name()} toward {self.route.destination_station}",
+                    {
+                        "current_station": self.route.current_station_name(),
+                        "destination_station": self.route.destination_station,
+                    },
+                )
+            self._emit_mode_change(old)
+            return
 
-    # ── speed ──
+        in_slow, slow_lim = self.route.in_slow_zone()
+        approaching = self.route.approaching_station(APPROACH_THRESHOLD_M)
+        in_station = self.route.in_station_geofence()
+        at_end = self.route.at_endpoint(ARRIVAL_THRESHOLD_M)
+
+        if self.mode == "accelerating":
+            if in_slow and self.speed_kph > slow_lim:
+                self.mode = "braking"
+                self.target_speed = slow_lim
+            elif approaching:
+                self.mode = "braking"
+                self.target_speed = 0.0
+            elif self.speed_kph >= self.target_speed * 0.95:
+                self.mode = "slow_zone" if in_slow else "cruising"
+
+        elif self.mode == "cruising":
+            self._smooth_target()
+            if in_slow and self.speed_kph > slow_lim:
+                self.mode = "braking"
+                self.target_speed = slow_lim
+            elif approaching:
+                self.mode = "braking"
+                self.target_speed = 0.0
+
+        elif self.mode == "slow_zone":
+            if not in_slow:
+                self.mode = "accelerating"
+                self._set_target()
+            elif approaching:
+                self.mode = "braking"
+                self.target_speed = 0.0
+
+        elif self.mode == "braking":
+            if at_end and in_station and self.speed_kph < 2.0:
+                self.speed_kph = 0.0
+                self.mode = "station_stop"
+                self._station_wait_ticks = random.randint(18, 45)
+                self._station_timer = 0
+                final_stop = self.route.at_final_destination()
+                self._just_arrived_final = final_stop
+                wp = self.route.next_waypoint_name()
+                self._emit_event(
+                    "info",
+                    "status",
+                    "ARRIVED_STATION",
+                    f"Arrived at {wp}",
+                    {
+                        "station": wp,
+                        "final_destination": final_stop,
+                        "route_remaining_km": round(self.route.remaining_route_distance_m() / 1000.0, 2),
+                    },
+                )
+            elif (
+                in_slow
+                and self.target_speed > 0
+                and self.speed_kph <= self.target_speed * 1.05
+            ):
+                self.mode = "slow_zone"
+            elif not approaching and not in_slow and self.speed_kph < 5.0 and not at_end:
+                self.mode = "accelerating"
+                self._set_target()
+
+        self._emit_mode_change(old)
 
     def _update_speed(self) -> None:
+        if SINGLE_TRAIN_MODE:
+            if self.mode == "braking":
+                distance_left = self.route.distance_to_next_wp_km * 1000.0
+                hard_stop = distance_left < 3_000
+                decel_lo, decel_hi = (0.6, 1.1) if hard_stop else (0.35, 0.8)
+                self.speed_kph = max(
+                    0.0, self.speed_kph - random.uniform(decel_lo, decel_hi)
+                )
+                self.throttle_pct = 0.0
+                self.brake_demand = (
+                    clamp(
+                        1.0 - self.speed_kph / max(1.0, SINGLE_TRAIN_SPEED_KPH + 20),
+                        0.0,
+                        1.0,
+                    )
+                )
+            elif self.mode in ("station_stop", "depot_stop", "idle_hold"):
+                self.speed_kph = 0.0
+                self.throttle_pct = 0.0
+                self.brake_demand = 0.0
+            else:
+                self.speed_kph = SINGLE_TRAIN_SPEED_KPH
+                self.target_speed = SINGLE_TRAIN_SPEED_KPH
+                self.throttle_pct = clamp(
+                    self.speed_kph / max(1.0, SINGLE_TRAIN_SPEED_KPH), 0, 1
+                )
+                self.brake_demand = 0.0
+            return
         if self.mode == "accelerating":
             self.speed_kph = min(
                 self.target_speed,
-                self.speed_kph + random.uniform(0.3, 0.8),
+                self.speed_kph + random.uniform(0.18, 0.45),
             )
             self.throttle_pct = clamp(
                 self.speed_kph / max(1.0, self.target_speed), 0, 1
@@ -1452,17 +1632,20 @@ class LocomotiveRuntime:
             self.brake_demand = 0.0
         elif self.mode in ("cruising", "slow_zone"):
             self.speed_kph = clamp(
-                self.speed_kph + random.uniform(-0.12, 0.12),
-                self.target_speed * 0.92,
-                self.target_speed * 1.03,
+                self.speed_kph + random.uniform(-0.08, 0.08),
+                self.target_speed * 0.94,
+                self.target_speed * 1.02,
             )
             self.throttle_pct = clamp(
-                0.30 + random.uniform(-0.05, 0.05), 0, 1
+                0.30 + random.uniform(-0.04, 0.04), 0, 1
             )
             self.brake_demand = 0.0
         elif self.mode == "braking":
+            distance_left = self.route.distance_to_next_wp_km * 1000.0
+            hard_stop = distance_left < 3_000
+            decel_lo, decel_hi = (0.6, 1.1) if hard_stop else (0.35, 0.8)
             self.speed_kph = max(
-                0.0, self.speed_kph - random.uniform(0.5, 1.5)
+                0.0, self.speed_kph - random.uniform(decel_lo, decel_hi)
             )
             self.throttle_pct = 0.0
             self.brake_demand = (
@@ -1472,14 +1655,12 @@ class LocomotiveRuntime:
                     1.0,
                 )
                 if self.target_speed > 0
-                else clamp(1.0 - self.speed_kph / 120.0, 0.3, 1.0)
+                else clamp(1.0 - self.speed_kph / 95.0, 0.35, 1.0)
             )
         else:
             self.speed_kph = 0.0
             self.throttle_pct = 0.0
             self.brake_demand = 0.0
-
-    # ── engine ──
 
     def _update_engine(self) -> None:
         idle, mx = 300.0, 950.0
@@ -1496,9 +1677,7 @@ class LocomotiveRuntime:
             gf = clamp(
                 1.0 + self.route.track_grade_pct() * 0.15, 0.5, 2.0
             )
-            self.engine_rpm = jitter(
-                lerp(600, 800, self.throttle_pct), 5
-            )
+            self.engine_rpm = jitter(lerp(580, 790, self.throttle_pct), 5)
             self.tractive_effort_kn = jitter(
                 lerp(150, 300, self.throttle_pct) * gf, 5
             )
@@ -1506,27 +1685,19 @@ class LocomotiveRuntime:
             self.current_a = lerp(100, 500, self.throttle_pct)
             self.dynamic_brake_force_kn = 0.0
             self.fuel_consumption_rate_lph = jitter(
-                lerp(150, 250, self.throttle_pct), 5
+                lerp(145, 245, self.throttle_pct), 5
             )
             self.brake_cylinder_pressure_kpa = 0.0
             self.brake_status = "release"
         elif self.mode == "braking":
             self.engine_rpm += (idle - self.engine_rpm) * 0.05
             self.engine_rpm = jitter(self.engine_rpm, 3)
-            self.tractive_effort_kn = max(
-                0.0, self.tractive_effort_kn - 15
-            )
-            self.dynamic_brake_force_kn = lerp(0, 400, self.brake_demand)
-            self.brake_cylinder_pressure_kpa = lerp(
-                0, 350, self.brake_demand
-            )
-            self.traction_voltage_v = max(
-                0.0, self.traction_voltage_v - 30
-            )
+            self.tractive_effort_kn = max(0.0, self.tractive_effort_kn - 15)
+            self.dynamic_brake_force_kn = lerp(0, 420, self.brake_demand)
+            self.brake_cylinder_pressure_kpa = lerp(0, 350, self.brake_demand)
+            self.traction_voltage_v = max(0.0, self.traction_voltage_v - 30)
             self.current_a = max(0.0, self.current_a - 20)
-            self.fuel_consumption_rate_lph = max(
-                20.0, self.fuel_consumption_rate_lph - 10
-            )
+            self.fuel_consumption_rate_lph = max(20.0, self.fuel_consumption_rate_lph - 10)
             self.brake_status = "service"
         else:
             self.engine_rpm = jitter(300.0, 5)
@@ -1542,20 +1713,12 @@ class LocomotiveRuntime:
         self.traction_voltage_v = clamp(self.traction_voltage_v, 0, 1400)
         self.current_a = clamp(self.current_a, 0, 1200)
         self.tractive_effort_kn = clamp(self.tractive_effort_kn, 0, 800)
-        self.dynamic_brake_force_kn = clamp(
-            self.dynamic_brake_force_kn, 0, 534
-        )
-        self.fuel_consumption_rate_lph = clamp(
-            self.fuel_consumption_rate_lph, 0, 500
-        )
-        self.brake_cylinder_pressure_kpa = clamp(
-            self.brake_cylinder_pressure_kpa, 0, 450
-        )
+        self.dynamic_brake_force_kn = clamp(self.dynamic_brake_force_kn, 0, 534)
+        self.fuel_consumption_rate_lph = clamp(self.fuel_consumption_rate_lph, 0, 500)
+        self.brake_cylinder_pressure_kpa = clamp(self.brake_cylinder_pressure_kpa, 0, 450)
 
-    # ── v3.1 FIX: thermal model respects overtemp anomaly ──
     def _update_thermal(self) -> None:
         if self.anomaly_mgr.has_type("engine_overtemp"):
-            # let anomaly.apply() drive temperature — only add tiny jitter
             self.engine_temp_c = jitter(self.engine_temp_c, 0.1)
             self.oil_temp_c = jitter(self.oil_temp_c, 0.1)
             return
@@ -1563,18 +1726,14 @@ class LocomotiveRuntime:
             "station_stop": 75.0,
             "depot_stop": 75.0,
             "idle_hold": 75.0,
-            "cruising": 88.0,
-            "slow_zone": 86.0,
-            "braking": 80.0,
+            "cruising": 86.0,
+            "slow_zone": 84.0,
+            "braking": 79.0,
         }.get(self.mode, 88.0 + self.throttle_pct * 10.0)
-        self.engine_temp_c += (tgt - self.engine_temp_c) * (
-            TICK_INTERVAL / 200.0
-        )
+        self.engine_temp_c += (tgt - self.engine_temp_c) * (TICK_INTERVAL / 200.0)
         self.engine_temp_c = jitter(self.engine_temp_c, 0.2)
         tgt_oil = self.engine_temp_c - random.uniform(5, 10)
-        self.oil_temp_c += (tgt_oil - self.oil_temp_c) * (
-            TICK_INTERVAL / 300.0
-        )
+        self.oil_temp_c += (tgt_oil - self.oil_temp_c) * (TICK_INTERVAL / 300.0)
         self.oil_temp_c = jitter(self.oil_temp_c, 0.2)
 
     def _update_fuel(self) -> None:
@@ -1583,32 +1742,24 @@ class LocomotiveRuntime:
         if self.fuel_level_pct < 15.0:
             self.fuel_level_pct = random.uniform(82, 97)
 
-    # ── v3.1 FIX: brake baseline respects active anomalies ──
     def _update_brakes_baseline(self) -> None:
         if not self.anomaly_mgr.has_type("brake_pressure_drift"):
             self.brake_pipe_pressure_kpa = jitter(480.0, 2.5)
-        # else: anomaly controls this value — don't reset
-
         if not self.anomaly_mgr.has_type("main_reservoir_drop"):
             self.main_reservoir_pressure_kpa = jitter(800.0, 5)
-
         if not self.anomaly_mgr.has_type("leak_rate_increase"):
             self.brake_pipe_leak_kpa_per_min = jitter(3.5, 1.0)
-
         self.battery_voltage_v = jitter(74.0, 0.15)
 
-    # ── v3.1 FIX: safety systems respect active anomalies ──
     def _update_safety(self) -> None:
         if not self.anomaly_mgr.has_type("alerter_timeout"):
             self.alerter_timer_sec += TICK_INTERVAL
             if self.alerter_timer_sec >= self._alerter_reset_at:
                 self.alerter_timer_sec = 0.0
                 self._alerter_reset_at = random.uniform(10, 18)
-        # else: anomaly controls alerter_timer_sec
 
         if not self.anomaly_mgr.has_type("comm_degradation"):
             self.comm_state = "online"
-
         if not self.anomaly_mgr.has_type("eab_degradation"):
             self.eab_status = "online"
 
@@ -1625,8 +1776,6 @@ class LocomotiveRuntime:
                 ["normal", "drowsy"], weights=[96, 4]
             )[0]
             self.driver_state["input_active"] = True
-
-    # ── health (BEFORE alerts) ──
 
     def _compute_health(self, state: dict) -> int:
         s = 100.0
@@ -1658,14 +1807,12 @@ class LocomotiveRuntime:
             s -= 20
         return max(0, min(100, int(s)))
 
-    # ── main tick ──
-
     def tick(self, allow_new_anomaly: bool = True) -> dict:
         self.seq += 1
         self._update_mode()
         self._update_speed()
 
-        seg_changed, _ = self.route.update(self.speed_kph)
+        seg_changed, destination_reached = self.route.update(self.speed_kph)
         if seg_changed:
             self._emit_event(
                 "info",
@@ -1674,17 +1821,14 @@ class LocomotiveRuntime:
                 f"Entered segment: {self.route.segment_name()}",
                 {"segment": self.route.segment_name()},
             )
+        if destination_reached:
+            self._just_arrived_final = True
 
         for gf in self.route.geofence_entered():
-            c = (
-                "SLOW_ZONE_ENTER"
-                if gf.type == "slow_zone"
-                else "ENTER_GEOFENCE"
-            )
             self._emit_event(
                 "info",
                 "geofence",
-                c,
+                "ENTER_GEOFENCE",
                 f"Entered {gf.type}: {gf.name}",
                 {"geofence": gf.name, "type": gf.type},
             )
@@ -1700,7 +1844,7 @@ class LocomotiveRuntime:
         self._update_engine()
         self._update_thermal()
         self._update_fuel()
-        self._update_brakes_baseline()  # ← renamed
+        self._update_brakes_baseline()
         self._update_safety()
 
         self.anomaly_mgr.tick(allow_new=allow_new_anomaly)
@@ -1711,11 +1855,17 @@ class LocomotiveRuntime:
             "locomotive_id": self.locomotive_id,
             "serial_number": self.serial_number,
             "train_id": self.train_id,
-            "line_id": self.line_id,
-            "line_name": self.line_name,
             "seq": self.seq,
             "train_run_id": self.train_run_id,
-            "route_id": self.line_id,
+            "route_id": self.route.trip_id,
+            "network_id": self.network.network_id,
+            "network_name": self.network.name,
+            "origin_station": self.route.origin_station,
+            "destination_station": self.route.destination_station,
+            "path_stations": list(self.route.path_stations),
+            "route_path_coordinates": self._route_path_coordinates(),
+            "current_station": self.route.current_station_name(),
+            "next_station_name": self.route.next_waypoint_name(),
             "geofence_id": pgf.geofence_id if pgf else None,
             "active_geofences": self.route.active_geofence_names(),
             "lat": round(self.route.lat, 6),
@@ -1723,18 +1873,10 @@ class LocomotiveRuntime:
             "alt_m": round(self.route.alt_m, 1),
             "speed_kph": round(max(0.0, self.speed_kph), 2),
             "heading_deg": round(self.route.heading_deg, 1),
-            "brake_pipe_pressure_kpa": round(
-                self.brake_pipe_pressure_kpa, 1
-            ),
-            "main_reservoir_pressure_kpa": round(
-                self.main_reservoir_pressure_kpa, 1
-            ),
-            "brake_cylinder_pressure_kpa": round(
-                self.brake_cylinder_pressure_kpa, 1
-            ),
-            "brake_pipe_leak_kpa_per_min": round(
-                self.brake_pipe_leak_kpa_per_min, 1
-            ),
+            "brake_pipe_pressure_kpa": round(self.brake_pipe_pressure_kpa, 1),
+            "main_reservoir_pressure_kpa": round(self.main_reservoir_pressure_kpa, 1),
+            "brake_cylinder_pressure_kpa": round(self.brake_cylinder_pressure_kpa, 1),
+            "brake_pipe_leak_kpa_per_min": round(self.brake_pipe_leak_kpa_per_min, 1),
             "brake_status": self.brake_status,
             "battery_voltage_v": round(self.battery_voltage_v, 2),
             "traction_voltage_v": round(self.traction_voltage_v, 1),
@@ -1743,13 +1885,9 @@ class LocomotiveRuntime:
             "engine_temp_c": round(self.engine_temp_c, 1),
             "oil_temp_c": round(self.oil_temp_c, 1),
             "fuel_level_pct": round(self.fuel_level_pct, 2),
-            "fuel_consumption_rate_lph": round(
-                self.fuel_consumption_rate_lph, 1
-            ),
+            "fuel_consumption_rate_lph": round(self.fuel_consumption_rate_lph, 1),
             "tractive_effort_kn": round(self.tractive_effort_kn, 1),
-            "dynamic_brake_force_kn": round(
-                self.dynamic_brake_force_kn, 1
-            ),
+            "dynamic_brake_force_kn": round(self.dynamic_brake_force_kn, 1),
             "alerter_timer_sec": round(self.alerter_timer_sec, 1),
             "pcs_open": self.pcs_open,
             "eab_status": self.eab_status,
@@ -1761,18 +1899,16 @@ class LocomotiveRuntime:
             "weather_factor": round(self.weather_factor, 3),
             "track_grade_pct": round(self.route.track_grade_pct(), 2),
             "current_mode": self.mode,
+            "segment_name": self.route.segment_name(),
+            "route_remaining_km": round(self.route.remaining_route_distance_m() / 1000.0, 2),
+            "distance_to_next_waypoint_km": round(self.route.distance_to_next_wp_km, 2),
         }
 
         state = self.anomaly_mgr.apply(state)
 
-        # ── v3.1: write-back ALL anomaly-affected values ──
         self.brake_pipe_pressure_kpa = state["brake_pipe_pressure_kpa"]
-        self.main_reservoir_pressure_kpa = state[
-            "main_reservoir_pressure_kpa"
-        ]
-        self.brake_pipe_leak_kpa_per_min = state[
-            "brake_pipe_leak_kpa_per_min"
-        ]
+        self.main_reservoir_pressure_kpa = state["main_reservoir_pressure_kpa"]
+        self.brake_pipe_leak_kpa_per_min = state["brake_pipe_leak_kpa_per_min"]
         self.engine_temp_c = state["engine_temp_c"]
         self.oil_temp_c = state["oil_temp_c"]
         self.engine_rpm = state["engine_rpm"]
@@ -1796,8 +1932,6 @@ class LocomotiveRuntime:
             locomotive_id=self.locomotive_id,
             serial_number=self.serial_number,
             train_id=self.train_id,
-            line_id=self.line_id,
-            line_name=self.line_name,
             updated_at=utcnow_iso(),
             last_ts=state["ts"],
             lat=state["lat"],
@@ -1816,8 +1950,11 @@ class LocomotiveRuntime:
             fuel_level_pct=state["fuel_level_pct"],
             engine_rpm=state["engine_rpm"],
             engine_temp_c=state["engine_temp_c"],
-            direction=self.route.direction,
-            segment_name=self.route.segment_name(),
+            segment_name=state["segment_name"],
+            origin_station=state["origin_station"],
+            destination_station=state["destination_station"],
+            route_remaining_km=state["route_remaining_km"],
+            path_stations=state["path_stations"],
         ).model_dump()
 
         return state
@@ -1829,22 +1966,16 @@ class LocomotiveRuntime:
 
 
 class FleetSimulator:
-    def __init__(self) -> None:
+    def __init__(self, network: GraphNetwork) -> None:
+        self.network = network
         self.runtimes: dict[str, LocomotiveRuntime] = {}
         self._ordered_ids: list[str] = []
-        self._line_locos: dict[str, list[str]] = {}
         self.global_seq: int = 0
 
-        for lcfg in LINES_CONFIG:
-            line = RAILWAY_LINES[lcfg["line_id"]]
-            loco_configs = _generate_loco_configs(lcfg, line)
-            line_ids: list[str] = []
-            for cfg in loco_configs:
-                rt = LocomotiveRuntime(cfg, line)
-                self.runtimes[rt.locomotive_id] = rt
-                self._ordered_ids.append(rt.locomotive_id)
-                line_ids.append(rt.locomotive_id)
-            self._line_locos[line.line_id] = line_ids
+        for slot, cfg in enumerate(_generate_loco_configs()):
+            rt = LocomotiveRuntime(cfg, network, seq_slot=slot)
+            self.runtimes[rt.locomotive_id] = rt
+            self._ordered_ids.append(rt.locomotive_id)
 
     @property
     def fleet_size(self) -> int:
@@ -1856,22 +1987,15 @@ class FleetSimulator:
 
     def tick_all(self) -> list[dict]:
         self.global_seq += 1
-        anom_count = sum(
-            rt.anomaly_mgr.count for rt in self.runtimes.values()
-        )
+        anom_count = sum(rt.anomaly_mgr.count for rt in self.runtimes.values())
         results: list[dict] = []
         for lid in self._ordered_ids:
             rt = self.runtimes[lid]
-            allow = (
-                anom_count < MAX_FLEET_ANOMALIES
-                or rt.anomaly_mgr.count > 0
-            )
+            allow = anom_count < MAX_FLEET_ANOMALIES or rt.anomaly_mgr.count > 0
             state = rt.tick(allow_new_anomaly=allow)
             results.append(state)
             if rt.anomaly_mgr.count > 0:
-                anom_count = sum(
-                    r.anomaly_mgr.count for r in self.runtimes.values()
-                )
+                anom_count = sum(r.anomaly_mgr.count for r in self.runtimes.values())
         return results
 
     def get_runtime(self, loco_id: str) -> LocomotiveRuntime | None:
@@ -1880,27 +2004,17 @@ class FleetSimulator:
     def all_runtimes(self) -> list[LocomotiveRuntime]:
         return [self.runtimes[lid] for lid in self._ordered_ids]
 
-    def line_runtimes(self, line_id: str) -> list[LocomotiveRuntime]:
-        ids = self._line_locos.get(line_id, [])
-        return [self.runtimes[lid] for lid in ids]
-
-    def build_fleet_summary(
-        self, runtimes: list[LocomotiveRuntime] | None = None
-    ) -> dict:
-        rts = runtimes if runtimes is not None else self.all_runtimes()
+    def build_fleet_summary(self) -> dict:
         locos: list[dict] = []
-        warn_c, crit_c, active_c, stopped_c, total_hi = 0, 0, 0, 0, 0.0
-        for rt in rts:
+        warn_c = crit_c = active_c = stopped_c = 0
+        total_hi = 0.0
+        for rt in self.all_runtimes():
             snap = rt.current_state_snapshot
             if snap is None:
                 continue
             locos.append(snap)
             total_hi += snap["health_index"]
-            if snap["current_mode"] in (
-                "station_stop",
-                "depot_stop",
-                "idle_hold",
-            ):
+            if snap["current_mode"] in ("station_stop", "depot_stop", "idle_hold"):
                 stopped_c += 1
             else:
                 active_c += 1
@@ -1909,46 +2023,6 @@ class FleetSimulator:
             elif snap["alarm_status"] == "critical":
                 crit_c += 1
         n = len(locos) or 1
-        line_summaries = []
-        for line_id, line in RAILWAY_LINES.items():
-            l_rts = self.line_runtimes(line_id)
-            l_active = sum(
-                1
-                for r in l_rts
-                if r.current_state_snapshot
-                and r.current_state_snapshot["current_mode"]
-                not in ("station_stop", "depot_stop", "idle_hold")
-            )
-            l_warn = sum(
-                1
-                for r in l_rts
-                if r.current_state_snapshot
-                and r.current_state_snapshot["alarm_status"] == "warning"
-            )
-            l_crit = sum(
-                1
-                for r in l_rts
-                if r.current_state_snapshot
-                and r.current_state_snapshot["alarm_status"] == "critical"
-            )
-            l_hi = [
-                r.current_state_snapshot["health_index"]
-                for r in l_rts
-                if r.current_state_snapshot
-            ]
-            line_summaries.append(
-                {
-                    "line_id": line_id,
-                    "name": line.name,
-                    "locomotive_count": len(l_rts),
-                    "active_count": l_active,
-                    "warning_count": l_warn,
-                    "critical_count": l_crit,
-                    "average_health_index": round(
-                        sum(l_hi) / max(1, len(l_hi)), 1
-                    ),
-                }
-            )
         return FleetSummary(
             total_locomotives=len(locos),
             active_count=active_c,
@@ -1956,7 +2030,6 @@ class FleetSimulator:
             warning_count=warn_c,
             critical_count=crit_c,
             average_health_index=round(total_hi / n, 1),
-            lines=line_summaries,
             locomotives=locos,
         ).model_dump()
 
@@ -1971,7 +2044,6 @@ class _WSClient:
     websocket: WebSocket
     queue: asyncio.Queue
     locomotive_id: str | None
-    line_id: str | None
 
 
 _ws_clients: dict[int, _WSClient] = {}
@@ -1979,22 +2051,10 @@ _ws_clients: dict[int, _WSClient] = {}
 
 def _broadcast(state: dict) -> None:
     lid = state["locomotive_id"]
-    line_id = state.get("line_id")
-    for cid, c in list(_ws_clients.items()):
-        send = False
-        if c.locomotive_id is None and c.line_id is None:
-            send = True
-        elif c.locomotive_id == lid:
-            send = True
-        elif (
-            c.line_id is not None
-            and c.line_id == line_id
-            and c.locomotive_id is None
-        ):
-            send = True
-        if send:
+    for cid, client in list(_ws_clients.items()):
+        if client.locomotive_id is None or client.locomotive_id == lid:
             try:
-                c.queue.put_nowait(state)
+                client.queue.put_nowait(state)
             except asyncio.QueueFull:
                 pass
 
@@ -2022,17 +2082,15 @@ async def _ws_handler(websocket: WebSocket, queue: asyncio.Queue) -> None:
         ],
         return_when=asyncio.FIRST_COMPLETED,
     )
-    for t in pending:
-        t.cancel()
+    for task in pending:
+        task.cancel()
 
 
 # ============================================================
 # FASTAPI APP
 # ============================================================
 
-app = FastAPI(
-    title="TE33A Multi-Line Fleet Telemetry Service", version="3.1.0"
-)
+app = FastAPI(title="TE33A Dijkstra Fleet Telemetry Service", version="4.0.0")
 fleet: FleetSimulator | None = None
 _start_mono: float = 0.0
 _sim_task: asyncio.Task | None = None
@@ -2054,7 +2112,7 @@ async def _simulation_loop() -> None:
 async def _on_startup() -> None:
     global fleet, _start_mono, _sim_task
     _start_mono = time.monotonic()
-    fleet = FleetSimulator()
+    fleet = FleetSimulator(NETWORK)
     _sim_task = asyncio.create_task(_simulation_loop())
 
 
@@ -2076,96 +2134,36 @@ def _rt_or_404(loco_id: str) -> LocomotiveRuntime:
     return rt
 
 
-def _line_or_404(line_id: str) -> RailwayLine:
-    line = RAILWAY_LINES.get(line_id)
-    if line is None:
-        raise HTTPException(404, "Line not found")
-    return line
-
-
-# ────────────────────────────────────────
-#  REST ENDPOINTS
-# ────────────────────────────────────────
-
-# ── health ──
-
-
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     return HealthResponse(
         uptime_sec=round(time.monotonic() - _start_mono, 1),
         tick_count=fleet.global_seq if fleet else 0,
         fleet_size=fleet.fleet_size if fleet else 0,
-        num_lines=len(RAILWAY_LINES),
         active_anomalies=fleet.active_anomaly_count if fleet else 0,
+        network_id=NETWORK.network_id,
     )
 
 
-# ── lines ──
+@app.get("/network")
+async def get_network() -> dict:
+    return {
+        "network_id": NETWORK.network_id,
+        "name": NETWORK.name,
+        "stations": [s.model_dump() for s in NETWORK.station_models],
+        "edges": [e.model_dump() for e in NETWORK.edge_models],
+        "total_distance_km": NETWORK.total_distance_km,
+    }
 
 
-@app.get("/lines")
-async def list_lines() -> list[dict]:
-    assert fleet is not None
-    return [
-        line.info_model(len(fleet.line_runtimes(line.line_id)))
-        for line in RAILWAY_LINES.values()
-    ]
+@app.get("/network/stations")
+async def network_stations() -> list[dict]:
+    return [s.model_dump() for s in NETWORK.station_models]
 
 
-@app.get("/lines/{line_id}")
-async def get_line(line_id: str) -> dict:
-    assert fleet is not None
-    line = _line_or_404(line_id)
-    return line.info_model(len(fleet.line_runtimes(line_id)))
-
-
-@app.get("/lines/{line_id}/fleet")
-async def line_fleet(line_id: str) -> dict:
-    assert fleet is not None
-    _line_or_404(line_id)
-    rts = fleet.line_runtimes(line_id)
-    return fleet.build_fleet_summary(rts)
-
-
-@app.get("/lines/{line_id}/locomotives")
-async def line_locos(line_id: str) -> list[dict]:
-    assert fleet is not None
-    _line_or_404(line_id)
-    return [
-        {
-            "locomotive": rt.locomotive_model.model_dump(),
-            "train_run": rt.train_run_model.model_dump(),
-        }
-        for rt in fleet.line_runtimes(line_id)
-    ]
-
-
-@app.get("/lines/{line_id}/latest")
-async def line_latest(line_id: str) -> list[dict]:
-    assert fleet is not None
-    _line_or_404(line_id)
-    return [
-        rt.latest_telemetry
-        for rt in fleet.line_runtimes(line_id)
-        if rt.latest_telemetry
-    ]
-
-
-@app.get("/lines/{line_id}/events")
-async def line_events(
-    line_id: str, limit: int = Query(default=100, ge=1, le=5000)
-) -> list[dict]:
-    assert fleet is not None
-    _line_or_404(line_id)
-    merged: list[dict] = []
-    for rt in fleet.line_runtimes(line_id):
-        merged.extend(list(rt.event_log))
-    merged.sort(key=lambda e: e.get("ts", ""), reverse=True)
-    return merged[:limit]
-
-
-# ── fleet (global) ──
+@app.get("/network/edges")
+async def network_edges() -> list[dict]:
+    return [e.model_dump() for e in NETWORK.edge_models]
 
 
 @app.get("/fleet")
@@ -2206,7 +2204,26 @@ async def fleet_events(
     return merged[:limit]
 
 
-# ── v3.1: anomaly injection endpoints ──
+@app.get("/fleet/anomalies")
+async def fleet_anomalies() -> list[dict]:
+    assert fleet is not None
+    result: list[dict] = []
+    for rt in fleet.all_runtimes():
+        for a in rt.anomaly_mgr.active:
+            result.append(
+                {
+                    "locomotive_id": rt.locomotive_id,
+                    "serial_number": rt.serial_number,
+                    "anomaly_type": a.atype,
+                    "severity": a.severity,
+                    "phase": a.phase,
+                    "factor": round(a.factor, 3),
+                    "elapsed": a.elapsed,
+                    "total_ticks": a.total_ticks,
+                    "remaining_ticks": a.total_ticks - a.elapsed,
+                }
+            )
+    return result
 
 
 @app.post("/locomotives/{locomotive_id}/inject")
@@ -2215,25 +2232,16 @@ async def inject_anomaly(
     anomaly_type: str = Query(default="random"),
     severity: str = Query(default="severe"),
 ) -> dict:
-    """Manually inject an anomaly into a specific locomotive for testing."""
     rt = _rt_or_404(locomotive_id)
     if anomaly_type == "random":
         anomaly_type = random.choice(_ANOMALY_TYPES)
     if anomaly_type not in _ANOMALY_TYPES:
-        raise HTTPException(
-            400,
-            f"Unknown anomaly_type. Valid: {_ANOMALY_TYPES}",
-        )
+        raise HTTPException(400, f"Unknown anomaly_type. Valid: {_ANOMALY_TYPES}")
     if severity not in ("mild", "moderate", "severe"):
-        raise HTTPException(
-            400, "severity must be: mild, moderate, severe"
-        )
+        raise HTTPException(400, "severity must be: mild, moderate, severe")
     slot = rt.anomaly_mgr.inject(atype=anomaly_type, severity=severity)
     if slot is None:
-        raise HTTPException(
-            409,
-            f"Locomotive already has {rt.anomaly_mgr.MAX_PER_LOCO} active anomalies",
-        )
+        raise HTTPException(409, f"Locomotive already has {rt.anomaly_mgr.MAX_PER_LOCO} active anomalies")
     rt._emit_event(
         "warning",
         "anomaly",
@@ -2252,69 +2260,6 @@ async def inject_anomaly(
             for a in rt.anomaly_mgr.active
         ],
     }
-
-
-@app.post("/fleet/stress_test")
-async def fleet_stress_test(
-    count: int = Query(default=15, ge=1, le=40),
-) -> dict:
-    """Inject severe anomalies into random locomotives fleet-wide."""
-    assert fleet is not None
-    rts = random.sample(
-        fleet.all_runtimes(), min(count, fleet.fleet_size)
-    )
-    injected: list[dict] = []
-    for rt in rts:
-        atype = random.choice(_ANOMALY_TYPES)
-        severity = random.choices(
-            ["moderate", "severe"], weights=[30, 70]
-        )[0]
-        slot = rt.anomaly_mgr.inject(atype=atype, severity=severity)
-        if slot:
-            rt._emit_event(
-                "warning",
-                "anomaly",
-                "ANOMALY_INJECTED",
-                f"Stress test: {atype} ({severity})",
-                {"anomaly_type": atype, "severity": severity},
-            )
-            injected.append(
-                {
-                    "locomotive_id": rt.locomotive_id,
-                    "serial": rt.serial_number,
-                    "line": rt.line_id,
-                    "anomaly": atype,
-                    "severity": severity,
-                }
-            )
-    return {"injected_count": len(injected), "details": injected}
-
-
-@app.get("/fleet/anomalies")
-async def fleet_anomalies() -> list[dict]:
-    """Show all currently active anomalies across the fleet."""
-    assert fleet is not None
-    result: list[dict] = []
-    for rt in fleet.all_runtimes():
-        for a in rt.anomaly_mgr.active:
-            result.append(
-                {
-                    "locomotive_id": rt.locomotive_id,
-                    "serial_number": rt.serial_number,
-                    "line_id": rt.line_id,
-                    "anomaly_type": a.atype,
-                    "severity": a.severity,
-                    "phase": a.phase,
-                    "factor": round(a.factor, 3),
-                    "elapsed": a.elapsed,
-                    "total_ticks": a.total_ticks,
-                    "remaining_ticks": a.total_ticks - a.elapsed,
-                }
-            )
-    return result
-
-
-# ── locomotives ──
 
 
 @app.get("/locomotives")
@@ -2371,46 +2316,66 @@ async def loco_events(
     return items[:limit]
 
 
-# ── route ──
-
-
-@app.get("/route")
-async def get_all_routes() -> list[dict]:
-    return [
-        {
-            "line_id": line.line_id,
-            "name": line.name,
-            "waypoints": [w.model_dump() for w in line.waypoints],
-            "speed_limits": [s.model_dump() for s in line.speed_limits],
-            "geofences": [g.model_dump() for g in line.geofences],
-            "total_distance_km": round(line.total_distance_km, 1),
-        }
-        for line in RAILWAY_LINES.values()
-    ]
-
-
 @app.get("/route/progress/{locomotive_id}")
 async def route_progress(locomotive_id: str) -> dict:
     rt = _rt_or_404(locomotive_id)
     r = rt.route
     return RouteProgressModel(
         locomotive_id=rt.locomotive_id,
-        line_id=rt.line_id,
-        active_segment_index=r.segment_index,
+        route_id=r.trip_id,
+        origin_station=r.origin_station,
+        destination_station=r.destination_station,
+        current_station=r.current_station_name(),
+        next_station_name=r.next_waypoint_name(),
+        active_segment_index=r.edge_index,
         active_segment_name=r.segment_name(),
-        direction=r.direction,
-        segment_progress=round(r.segment_progress, 4),
+        segment_progress=round(r.edge_progress, 4),
         distance_to_next_waypoint_km=round(r.distance_to_next_wp_km, 2),
-        next_waypoint_name=r.next_waypoint_name(),
+        route_remaining_km=round(r.remaining_route_distance_m() / 1000.0, 2),
         lat=round(r.lat, 6),
         lon=round(r.lon, 6),
         alt_m=round(r.alt_m, 1),
         heading_deg=round(r.heading_deg, 1),
         active_geofences=r.active_geofence_names(),
+        path_stations=list(r.path_stations),
     ).model_dump()
 
 
-# ── websockets ──
+@app.post("/locomotives/{locomotive_id}/reroute")
+async def reroute_locomotive(
+    locomotive_id: str,
+    destination_station: str | None = Query(default=None),
+) -> dict:
+    rt = _rt_or_404(locomotive_id)
+    origin = rt.route.current_station_name() if rt.mode in ("station_stop", "depot_stop", "idle_hold") else rt.route.next_waypoint_name()
+    if destination_station is None:
+        destination_station = random.choice(NETWORK.station_names)
+        while destination_station == origin:
+            destination_station = random.choice(NETWORK.station_names)
+    if destination_station not in NETWORK.stations_by_name:
+        raise HTTPException(404, "Destination station not found")
+    path, dist_m = NETWORK.shortest_path(origin, destination_station)
+    if len(path) < 2:
+        raise HTTPException(400, "No route found")
+    rt.route.reset_trip(origin, destination_station, path, dist_m)
+    rt.mode = "accelerating"
+    rt.speed_kph = min(rt.speed_kph, 20.0)
+    rt._set_target()
+    rt._emit_event(
+        "info",
+        "trip",
+        "MANUAL_REROUTE",
+        f"Manual reroute: {origin} → {destination_station}",
+        {"path_stations": path, "distance_km": round(dist_m / 1000.0, 1)},
+    )
+    return {
+        "status": "rerouted",
+        "locomotive_id": locomotive_id,
+        "origin_station": origin,
+        "destination_station": destination_station,
+        "path_stations": path,
+        "distance_km": round(dist_m / 1000.0, 1),
+    }
 
 
 @app.websocket("/ws/telemetry")
@@ -2418,9 +2383,7 @@ async def ws_all(websocket: WebSocket) -> None:
     await websocket.accept()
     queue: asyncio.Queue = asyncio.Queue(maxsize=WS_QUEUE_MAX)
     cid = id(websocket)
-    _ws_clients[cid] = _WSClient(
-        websocket, queue, locomotive_id=None, line_id=None
-    )
+    _ws_clients[cid] = _WSClient(websocket, queue, locomotive_id=None)
     try:
         await _ws_handler(websocket, queue)
     finally:
@@ -2428,44 +2391,19 @@ async def ws_all(websocket: WebSocket) -> None:
 
 
 @app.websocket("/ws/telemetry/{locomotive_id}")
-async def ws_single(
-    websocket: WebSocket, locomotive_id: str
-) -> None:
+async def ws_single(websocket: WebSocket, locomotive_id: str) -> None:
     await websocket.accept()
     if fleet and fleet.get_runtime(locomotive_id) is None:
         await websocket.close(code=4004, reason="Locomotive not found")
         return
     queue: asyncio.Queue = asyncio.Queue(maxsize=WS_QUEUE_MAX)
     cid = id(websocket)
-    _ws_clients[cid] = _WSClient(
-        websocket, queue, locomotive_id=locomotive_id, line_id=None
-    )
+    _ws_clients[cid] = _WSClient(websocket, queue, locomotive_id=locomotive_id)
     try:
         await _ws_handler(websocket, queue)
     finally:
         _ws_clients.pop(cid, None)
 
-
-@app.websocket("/ws/line/{line_id}")
-async def ws_line(websocket: WebSocket, line_id: str) -> None:
-    await websocket.accept()
-    if line_id not in RAILWAY_LINES:
-        await websocket.close(code=4004, reason="Line not found")
-        return
-    queue: asyncio.Queue = asyncio.Queue(maxsize=WS_QUEUE_MAX)
-    cid = id(websocket)
-    _ws_clients[cid] = _WSClient(
-        websocket, queue, locomotive_id=None, line_id=line_id
-    )
-    try:
-        await _ws_handler(websocket, queue)
-    finally:
-        _ws_clients.pop(cid, None)
-
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
 
 if __name__ == "__main__":
     import uvicorn

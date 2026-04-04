@@ -50,25 +50,25 @@ public class TelemetryIngestionService {
 
         boolean inserted = telemetryRawPersistencePort.insert(request, healthIndex);
 
+        TrainLiveState liveState = trainLiveStateStore.upsert(
+                request, healthIndex, healthStatus, zoneStrings);
+
+        TrainStateWsMessage stateMessage = trainWsMapper.toStateMessage(liveState);
+        trainUpdatesPublisher.publishTrainState(request.getLocomotiveId(), stateMessage);
+
+        if (request.getSpeedKph() != null) {
+            TelemetryPointWsMessage speedPoint = trainWsMapper.toTelemetryPoint(
+                    liveState, "speedKph", request.getSpeedKph().doubleValue());
+            trainUpdatesPublisher.publishTelemetryPoint(request.getLocomotiveId(), speedPoint);
+        }
+
+        if (request.getEngineTempC() != null) {
+            TelemetryPointWsMessage engineTempPoint = trainWsMapper.toTelemetryPoint(
+                    liveState, "engineTempC", request.getEngineTempC().doubleValue());
+            trainUpdatesPublisher.publishTelemetryPoint(request.getLocomotiveId(), engineTempPoint);
+        }
+
         if (inserted) {
-            TrainLiveState liveState = trainLiveStateStore.upsert(
-                    request, healthIndex, healthStatus, zoneStrings);
-
-            TrainStateWsMessage stateMessage = trainWsMapper.toStateMessage(liveState);
-            trainUpdatesPublisher.publishTrainState(request.getLocomotiveId(), stateMessage);
-
-            if (request.getSpeedKph() != null) {
-                TelemetryPointWsMessage speedPoint = trainWsMapper.toTelemetryPoint(
-                        liveState, "speedKph", request.getSpeedKph().doubleValue());
-                trainUpdatesPublisher.publishTelemetryPoint(request.getLocomotiveId(), speedPoint);
-            }
-
-            if (request.getEngineTempC() != null) {
-                TelemetryPointWsMessage engineTempPoint = trainWsMapper.toTelemetryPoint(
-                        liveState, "engineTempC", request.getEngineTempC().doubleValue());
-                trainUpdatesPublisher.publishTelemetryPoint(request.getLocomotiveId(), engineTempPoint);
-            }
-
             List<Alert> alerts = alertEngine.evaluate(zones, request);
             for (Alert alert : alerts) {
                 AlertWsMessage alertMsg = AlertWsMessage.builder()

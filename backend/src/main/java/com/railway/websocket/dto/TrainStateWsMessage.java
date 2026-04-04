@@ -60,4 +60,6 @@ public class TrainStateWsMessage {
     private String currentMode;
 
     private Map<String, String> parameterZones;
+
+    private List<List<Double>> routePathCoordinates;
 }

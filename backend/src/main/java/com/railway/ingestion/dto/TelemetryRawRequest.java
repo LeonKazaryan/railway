@@ -91,4 +91,6 @@ public class TelemetryRawRequest {
     private Float weatherFactor;
     private Float trackGradePct;
     private String currentMode;
+
+    private List<List<Double>> routePathCoordinates;
 }

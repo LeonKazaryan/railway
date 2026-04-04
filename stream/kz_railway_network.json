@@ -1,0 +1,544 @@
+{
+  "stations": [
+    {
+      "station_id": 1,
+      "anchor": "Petropavl",
+      "station_name": "Petropavl Central",
+      "lat": 54.87,
+      "lon": 69.15,
+      "kind": "hub"
+    },
+    {
+      "station_id": 2,
+      "anchor": "Kostanay",
+      "station_name": "Kostanay Central",
+      "lat": 53.22,
+      "lon": 63.63,
+      "kind": "hub"
+    },
+    {
+      "station_id": 3,
+      "anchor": "Rudny",
+      "station_name": "Rudny Central",
+      "lat": 52.97,
+      "lon": 63.12,
+      "kind": "hub"
+    },
+    {
+      "station_id": 4,
+      "anchor": "Kokshetau",
+      "station_name": "Kokshetau Central",
+      "lat": 53.29,
+      "lon": 69.39,
+      "kind": "hub"
+    },
+    {
+      "station_id": 5,
+      "anchor": "Astana",
+      "station_name": "Astana Central",
+      "lat": 51.17,
+      "lon": 71.45,
+      "kind": "hub"
+    },
+    {
+      "station_id": 6,
+      "anchor": "Atbasar",
+      "station_name": "Atbasar Central",
+      "lat": 51.8,
+      "lon": 68.36,
+      "kind": "hub"
+    },
+    {
+      "station_id": 7,
+      "anchor": "Pavlodar",
+      "station_name": "Pavlodar Central",
+      "lat": 52.29,
+      "lon": 76.97,
+      "kind": "hub"
+    },
+    {
+      "station_id": 8,
+      "anchor": "Ekibastuz",
+      "station_name": "Ekibastuz Central",
+      "lat": 51.73,
+      "lon": 75.32,
+      "kind": "hub"
+    },
+    {
+      "station_id": 9,
+      "anchor": "Karaganda",
+      "station_name": "Karaganda Central",
+      "lat": 49.8,
+      "lon": 73.11,
+      "kind": "hub"
+    },
+    {
+      "station_id": 10,
+      "anchor": "Temirtau",
+      "station_name": "Temirtau Central",
+      "lat": 50.05,
+      "lon": 72.96,
+      "kind": "hub"
+    },
+    {
+      "station_id": 11,
+      "anchor": "Jezkazgan",
+      "station_name": "Jezkazgan Central",
+      "lat": 47.8,
+      "lon": 67.71,
+      "kind": "hub"
+    },
+    {
+      "station_id": 12,
+      "anchor": "Balkhash",
+      "station_name": "Balkhash Central",
+      "lat": 46.85,
+      "lon": 74.98,
+      "kind": "hub"
+    },
+    {
+      "station_id": 13,
+      "anchor": "Semey",
+      "station_name": "Semey Central",
+      "lat": 50.41,
+      "lon": 80.23,
+      "kind": "hub"
+    },
+    {
+      "station_id": 14,
+      "anchor": "Oskemen",
+      "station_name": "Oskemen Central",
+      "lat": 49.97,
+      "lon": 82.61,
+      "kind": "hub"
+    },
+    {
+      "station_id": 15,
+      "anchor": "Ayagoz",
+      "station_name": "Ayagoz Central",
+      "lat": 47.96,
+      "lon": 80.43,
+      "kind": "hub"
+    },
+    {
+      "station_id": 16,
+      "anchor": "Almaty",
+      "station_name": "Almaty Central",
+      "lat": 43.24,
+      "lon": 76.92,
+      "kind": "hub"
+    },
+    {
+      "station_id": 17,
+      "anchor": "Taldykorgan",
+      "station_name": "Taldykorgan Central",
+      "lat": 45.01,
+      "lon": 78.37,
+      "kind": "hub"
+    },
+    {
+      "station_id": 18,
+      "anchor": "Saryozek",
+      "station_name": "Saryozek Central",
+      "lat": 44.36,
+      "lon": 77.98,
+      "kind": "hub"
+    },
+    {
+      "station_id": 19,
+      "anchor": "Shu",
+      "station_name": "Shu Central",
+      "lat": 43.6,
+      "lon": 73.76,
+      "kind": "hub"
+    },
+    {
+      "station_id": 20,
+      "anchor": "Taraz",
+      "station_name": "Taraz Central",
+      "lat": 42.9,
+      "lon": 71.37,
+      "kind": "hub"
+    },
+    {
+      "station_id": 21,
+      "anchor": "Shymkent",
+      "station_name": "Shymkent Central",
+      "lat": 42.32,
+      "lon": 69.59,
+      "kind": "hub"
+    },
+    {
+      "station_id": 22,
+      "anchor": "Turkistan",
+      "station_name": "Turkistan Central",
+      "lat": 43.3,
+      "lon": 68.27,
+      "kind": "hub"
+    },
+    {
+      "station_id": 23,
+      "anchor": "Kyzylorda",
+      "station_name": "Kyzylorda Central",
+      "lat": 44.85,
+      "lon": 65.51,
+      "kind": "hub"
+    },
+    {
+      "station_id": 24,
+      "anchor": "Baikonur",
+      "station_name": "Baikonur Central",
+      "lat": 45.61,
+      "lon": 63.32,
+      "kind": "hub"
+    },
+    {
+      "station_id": 25,
+      "anchor": "Aral",
+      "station_name": "Aral Central",
+      "lat": 46.8,
+      "lon": 61.67,
+      "kind": "hub"
+    },
+    {
+      "station_id": 26,
+      "anchor": "Aktobe",
+      "station_name": "Aktobe Central",
+      "lat": 50.28,
+      "lon": 57.17,
+      "kind": "hub"
+    },
+    {
+      "station_id": 27,
+      "anchor": "Kandyagash",
+      "station_name": "Kandyagash Central",
+      "lat": 49.47,
+      "lon": 57.43,
+      "kind": "hub"
+    },
+    {
+      "station_id": 28,
+      "anchor": "Atyrau",
+      "station_name": "Atyrau Central",
+      "lat": 47.1,
+      "lon": 51.92,
+      "kind": "hub"
+    },
+    {
+      "station_id": 29,
+      "anchor": "Aktau",
+      "station_name": "Aktau Central",
+      "lat": 43.65,
+      "lon": 51.2,
+      "kind": "hub"
+    },
+    {
+      "station_id": 30,
+      "anchor": "Zhanaozen",
+      "station_name": "Zhanaozen Central",
+      "lat": 43.34,
+      "lon": 52.86,
+      "kind": "hub"
+    },
+    {
+      "station_id": 31,
+      "anchor": "Beyneu",
+      "station_name": "Beyneu Central",
+      "lat": 45.32,
+      "lon": 55.2,
+      "kind": "hub"
+    },
+    {
+      "station_id": 32,
+      "anchor": "Oral",
+      "station_name": "Oral Central",
+      "lat": 51.23,
+      "lon": 51.37,
+      "kind": "hub"
+    },
+    {
+      "station_id": 33,
+      "anchor": "Shalkar",
+      "station_name": "Shalkar Central",
+      "lat": 47.83,
+      "lon": 59.62,
+      "kind": "hub"
+    },
+    {
+      "station_id": 34,
+      "anchor": "Makat",
+      "station_name": "Makat Central",
+      "lat": 47.65,
+      "lon": 53.35,
+      "kind": "hub"
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": 1,
+      "from_station": "Oral Central",
+      "to_station": "Atyrau Central",
+      "edge_type": "corridor",
+      "approx_km": 460.8
+    },
+    {
+      "edge_id": 2,
+      "from_station": "Atyrau Central",
+      "to_station": "Makat Central",
+      "edge_type": "corridor",
+      "approx_km": 136.0
+    },
+    {
+      "edge_id": 3,
+      "from_station": "Makat Central",
+      "to_station": "Beyneu Central",
+      "edge_type": "corridor",
+      "approx_km": 302.7
+    },
+    {
+      "edge_id": 4,
+      "from_station": "Beyneu Central",
+      "to_station": "Aktau Central",
+      "edge_type": "corridor",
+      "approx_km": 387.2
+    },
+    {
+      "edge_id": 5,
+      "from_station": "Beyneu Central",
+      "to_station": "Zhanaozen Central",
+      "edge_type": "corridor",
+      "approx_km": 296.4
+    },
+    {
+      "edge_id": 6,
+      "from_station": "Aktobe Central",
+      "to_station": "Kandyagash Central",
+      "edge_type": "corridor",
+      "approx_km": 92.6
+    },
+    {
+      "edge_id": 7,
+      "from_station": "Kandyagash Central",
+      "to_station": "Shalkar Central",
+      "edge_type": "corridor",
+      "approx_km": 260.4
+    },
+    {
+      "edge_id": 8,
+      "from_station": "Shalkar Central",
+      "to_station": "Aral Central",
+      "edge_type": "corridor",
+      "approx_km": 208.4
+    },
+    {
+      "edge_id": 9,
+      "from_station": "Aral Central",
+      "to_station": "Kyzylorda Central",
+      "edge_type": "corridor",
+      "approx_km": 391.6
+    },
+    {
+      "edge_id": 10,
+      "from_station": "Kyzylorda Central",
+      "to_station": "Turkistan Central",
+      "edge_type": "corridor",
+      "approx_km": 290.9
+    },
+    {
+      "edge_id": 11,
+      "from_station": "Turkistan Central",
+      "to_station": "Shymkent Central",
+      "edge_type": "corridor",
+      "approx_km": 156.3
+    },
+    {
+      "edge_id": 12,
+      "from_station": "Shymkent Central",
+      "to_station": "Taraz Central",
+      "edge_type": "corridor",
+      "approx_km": 164.4
+    },
+    {
+      "edge_id": 13,
+      "from_station": "Taraz Central",
+      "to_station": "Shu Central",
+      "edge_type": "corridor",
+      "approx_km": 217.5
+    },
+    {
+      "edge_id": 14,
+      "from_station": "Shu Central",
+      "to_station": "Almaty Central",
+      "edge_type": "corridor",
+      "approx_km": 271.6
+    },
+    {
+      "edge_id": 15,
+      "from_station": "Kyzylorda Central",
+      "to_station": "Baikonur Central",
+      "edge_type": "corridor",
+      "approx_km": 204.4
+    },
+    {
+      "edge_id": 16,
+      "from_station": "Petropavl Central",
+      "to_station": "Kokshetau Central",
+      "edge_type": "corridor",
+      "approx_km": 176.6
+    },
+    {
+      "edge_id": 17,
+      "from_station": "Kokshetau Central",
+      "to_station": "Astana Central",
+      "edge_type": "corridor",
+      "approx_km": 293.3
+    },
+    {
+      "edge_id": 18,
+      "from_station": "Astana Central",
+      "to_station": "Karaganda Central",
+      "edge_type": "corridor",
+      "approx_km": 207.4
+    },
+    {
+      "edge_id": 19,
+      "from_station": "Karaganda Central",
+      "to_station": "Balkhash Central",
+      "edge_type": "corridor",
+      "approx_km": 364.0
+    },
+    {
+      "edge_id": 20,
+      "from_station": "Balkhash Central",
+      "to_station": "Saryozek Central",
+      "edge_type": "corridor",
+      "approx_km": 376.1
+    },
+    {
+      "edge_id": 21,
+      "from_station": "Saryozek Central",
+      "to_station": "Almaty Central",
+      "edge_type": "corridor",
+      "approx_km": 153.5
+    },
+    {
+      "edge_id": 22,
+      "from_station": "Kostanay Central",
+      "to_station": "Atbasar Central",
+      "edge_type": "corridor",
+      "approx_km": 431.8
+    },
+    {
+      "edge_id": 23,
+      "from_station": "Atbasar Central",
+      "to_station": "Astana Central",
+      "edge_type": "corridor",
+      "approx_km": 271.8
+    },
+    {
+      "edge_id": 24,
+      "from_station": "Kokshetau Central",
+      "to_station": "Kostanay Central",
+      "edge_type": "corridor",
+      "approx_km": 489.7
+    },
+    {
+      "edge_id": 25,
+      "from_station": "Astana Central",
+      "to_station": "Ekibastuz Central",
+      "edge_type": "corridor",
+      "approx_km": 334.8
+    },
+    {
+      "edge_id": 26,
+      "from_station": "Ekibastuz Central",
+      "to_station": "Pavlodar Central",
+      "edge_type": "corridor",
+      "approx_km": 153.4
+    },
+    {
+      "edge_id": 27,
+      "from_station": "Pavlodar Central",
+      "to_station": "Semey Central",
+      "edge_type": "corridor",
+      "approx_km": 346.9
+    },
+    {
+      "edge_id": 28,
+      "from_station": "Semey Central",
+      "to_station": "Oskemen Central",
+      "edge_type": "corridor",
+      "approx_km": 208.1
+    },
+    {
+      "edge_id": 29,
+      "from_station": "Karaganda Central",
+      "to_station": "Temirtau Central",
+      "edge_type": "corridor",
+      "approx_km": 30.5
+    },
+    {
+      "edge_id": 30,
+      "from_station": "Temirtau Central",
+      "to_station": "Astana Central",
+      "edge_type": "corridor",
+      "approx_km": 178.7
+    },
+    {
+      "edge_id": 31,
+      "from_station": "Karaganda Central",
+      "to_station": "Jezkazgan Central",
+      "edge_type": "corridor",
+      "approx_km": 509.9
+    },
+    {
+      "edge_id": 32,
+      "from_station": "Semey Central",
+      "to_station": "Ayagoz Central",
+      "edge_type": "corridor",
+      "approx_km": 272.5
+    },
+    {
+      "edge_id": 33,
+      "from_station": "Taldykorgan Central",
+      "to_station": "Saryozek Central",
+      "edge_type": "corridor",
+      "approx_km": 79.4
+    },
+    {
+      "edge_id": 34,
+      "from_station": "Taldykorgan Central",
+      "to_station": "Ayagoz Central",
+      "edge_type": "corridor",
+      "approx_km": 371.3
+    },
+    {
+      "edge_id": 35,
+      "from_station": "Aktobe Central",
+      "to_station": "Oral Central",
+      "edge_type": "corridor",
+      "approx_km": 504.2
+    },
+    {
+      "edge_id": 36,
+      "from_station": "Ekibastuz Central",
+      "to_station": "Karaganda Central",
+      "edge_type": "corridor",
+      "approx_km": 284.9
+    },
+    {
+      "edge_id": 37,
+      "from_station": "Makat Central",
+      "to_station": "Kandyagash Central",
+      "edge_type": "corridor",
+      "approx_km": 255
+    },
+    {
+      "edge_id": 38,
+      "from_station": "Kostanay Central",
+      "to_station": "Rudny Central",
+      "edge_type": "corridor",
+      "approx_km": 26
+    }
+  ]
+}

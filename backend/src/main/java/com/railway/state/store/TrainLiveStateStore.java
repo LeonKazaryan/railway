@@ -15,10 +15,28 @@ public class TrainLiveStateStore {
 
     private final Map<UUID, TrainLiveState> store = new ConcurrentHashMap<>();
 
+    public void clear() {
+        store.clear();
+    }
+
     public TrainLiveState upsert(TelemetryRawRequest request, Integer healthIndex,
                                   String healthStatus, Map<String, String> parameterZones) {
         return store.compute(request.getLocomotiveId(), (id, current) -> {
-            if (current != null && current.getSeq() != null && request.getSeq() <= current.getSeq()) {
+            if (current != null && current.getTs() != null && request.getTs() != null) {
+                int cmp = request.getTs().compareTo(current.getTs());
+                if (cmp < 0) {
+                    return current;
+                }
+                if (cmp == 0
+                        && current.getSeq() != null
+                        && request.getSeq() != null
+                        && request.getSeq() <= current.getSeq()) {
+                    return current;
+                }
+            } else if (current != null
+                    && current.getSeq() != null
+                    && request.getSeq() != null
+                    && request.getSeq() <= current.getSeq()) {
                 return current;
             }
 
@@ -60,6 +78,7 @@ public class TrainLiveStateStore {
                     .faultCodes(request.getFaultCodes() == null ? List.of() : request.getFaultCodes())
                     .currentMode(request.getCurrentMode())
                     .parameterZones(parameterZones)
+                    .routePathCoordinates(request.getRoutePathCoordinates())
                     .build();
         });
     }

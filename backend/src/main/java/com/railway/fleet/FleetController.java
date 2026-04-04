@@ -9,6 +9,7 @@ import com.railway.websocket.mapper.TrainWsMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,6 +27,11 @@ public class FleetController {
     @GetMapping("/live-trains")
     public List<TrainStateWsMessage> liveTrains() {
         return trainLiveStateStore.all().stream().map(trainWsMapper::toStateMessage).toList();
+    }
+
+    @PostMapping("/live-state/reset")
+    public void resetLiveState() {
+        trainLiveStateStore.clear();
     }
 
     @GetMapping("/trains")

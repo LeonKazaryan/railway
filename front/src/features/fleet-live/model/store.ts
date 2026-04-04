@@ -54,9 +54,10 @@ export interface WsTrainState {
   faultCodes: string[] | null;
   currentMode: string | null;
   parameterZones: Record<string, "green" | "yellow" | "red"> | null;
+  routePathCoordinates: [number, number][] | null;
 }
 
-function deriveStatus(ws: WsTrainState): TrainStatus {
+export function deriveTrainStatus(ws: WsTrainState): TrainStatus {
   if (ws.commState === "offline" || ws.commState === null) return "no_signal";
   const h = ws.healthIndex ?? 100;
   if (h < 70) return "critical";
@@ -82,9 +83,10 @@ function formatTime(iso: string): string {
 
 export function wsToTrain(ws: WsTrainState): Train {
   return {
-    id: ws.trainId ?? ws.locomotiveId,
+    id: ws.locomotiveId,
+    label: ws.trainId ?? ws.serialNumber ?? ws.locomotiveId,
     model: deriveModel(ws),
-    status: deriveStatus(ws),
+    status: deriveTrainStatus(ws),
     healthScore: ws.healthIndex ?? 0,
     speed: Math.round(ws.speedKph ?? 0),
     position: { lng: ws.lon ?? 0, lat: ws.lat ?? 0 },
@@ -108,6 +110,9 @@ export const useFleetLiveStore = create<FleetLiveState>((set) => ({
   messageCount: 0,
   _upsert: (ws) =>
     set((state) => {
+      if (ws.locomotiveId == null || ws.locomotiveId === "") {
+        return state;
+      }
       const next = new Map(state.trains);
       next.set(ws.locomotiveId, ws);
       pushLiveEvent(ws);
@@ -118,6 +123,7 @@ export const useFleetLiveStore = create<FleetLiveState>((set) => ({
       if (rows.length === 0) return state;
       const next = new Map(state.trains);
       for (const ws of rows) {
+        if (ws.locomotiveId == null || ws.locomotiveId === "") continue;
         next.set(ws.locomotiveId, ws);
       }
       return { trains: next };
@@ -153,7 +159,7 @@ export async function startFleetLiveConnection(): Promise<void> {
 
   if (import.meta.env.DEV && useFleetLiveStore.getState().trains.size === 0) {
     fleetLog(
-      "0 trains in API memory — start stream (version2) + telemetry_bridge so POST /api/v1/telemetry/raw fills TrainLiveStateStore.",
+      "0 trains in API memory — start stream/version2.py + telemetry_bridge so POST /api/v1/telemetry/raw fills TrainLiveStateStore.",
     );
   }
 
@@ -204,7 +210,7 @@ function computeFleetStats() {
   let healthSum = 0;
 
   for (const ws of arr) {
-    const st = deriveStatus(ws);
+    const st = deriveTrainStatus(ws);
     if (st === "critical" || st === "no_signal") criticalCount++;
     else if (st === "warning") warningCount++;
     else normalCount++;
@@ -227,8 +233,9 @@ function computeTopRiskRows() {
     .sort((a, b) => (a.healthIndex ?? 100) - (b.healthIndex ?? 100))
     .slice(0, 5)
     .map((ws) => ({
-      id: ws.trainId ?? ws.locomotiveId,
-      issue: ws.faultCodes?.[0] ?? deriveStatus(ws),
+      id: ws.locomotiveId,
+      label: ws.trainId ?? ws.serialNumber ?? ws.locomotiveId,
+      issue: ws.faultCodes?.[0] ?? deriveTrainStatus(ws),
       score: ws.healthIndex ?? 0,
     }));
 }
@@ -325,7 +332,7 @@ const eventBuffer: LiveEvent[] = [];
 const MAX_EVENTS = 20;
 
 export function pushLiveEvent(ws: WsTrainState) {
-  const st = deriveStatus(ws);
+  const st = deriveTrainStatus(ws);
   if (st === "normal") return;
   eventBuffer.unshift({
     time: formatTime(ws.ts),

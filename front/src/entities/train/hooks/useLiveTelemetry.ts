@@ -57,7 +57,7 @@ const EMPTY_SNAPSHOT: TelemetrySnapshot = {
 
 export function useLiveTelemetry(trainId: string): TelemetryBuffer {
   const historyRef = useRef<TelemetrySnapshot[]>([]);
-  const lastSeqRef = useRef<number>(-1);
+  const lastSeqKeyRef = useRef<string>("");
   const getHistory = useCallback(() => historyRef.current, []);
 
   const trains = useFleetLiveStore((s) => s.trains);
@@ -72,8 +72,9 @@ export function useLiveTelemetry(trainId: string): TelemetryBuffer {
 
   const snapshot = ws ? wsToSnapshot(ws) : EMPTY_SNAPSHOT;
 
-  if (ws && ws.seq !== lastSeqRef.current) {
-    lastSeqRef.current = ws.seq;
+  const seqKey = ws ? `${ws.locomotiveId}:${ws.seq}` : "";
+  if (ws && seqKey !== lastSeqKeyRef.current) {
+    lastSeqKeyRef.current = seqKey;
     const buf = historyRef.current;
     if (buf.length >= HISTORY_CAPACITY) buf.shift();
     buf.push(snapshot);

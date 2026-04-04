@@ -11,6 +11,10 @@ SIM_BASE_URL = os.environ.get("SIM_BASE_URL", "http://127.0.0.1:8000").rstrip("/
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8080").rstrip("/")
 INTERVAL_SEC = float(os.environ.get("BRIDGE_INTERVAL_SEC", "0.5"))
 INGEST_PATH = os.environ.get("BRIDGE_INGEST_PATH", "/api/v1/telemetry/raw")
+RESET_PATH = os.environ.get("BRIDGE_RESET_PATH", "/api/v1/fleet/live-state/reset")
+CLEAR_LIVE_STATE_ON_START = os.environ.get(
+    "BRIDGE_CLEAR_LIVE_STATE_ON_START", "1"
+).lower() in ("1", "true", "yes")
 TIMEOUT = httpx.Timeout(30.0)
 
 
@@ -95,6 +99,8 @@ def _sim_row_to_backend_body(s: dict[str, Any]) -> dict[str, Any]:
         body["trackGradePct"] = float(s["track_grade_pct"])
     if s.get("current_mode") is not None:
         body["currentMode"] = s["current_mode"]
+    if s.get("route_path_coordinates") is not None:
+        body["routePathCoordinates"] = s["route_path_coordinates"]
     return body
 
 
@@ -128,6 +134,12 @@ async def _tick(client: httpx.AsyncClient, last_seq: dict[str, int]) -> None:
 async def _run() -> None:
     last_seq: dict[str, int] = {}
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+        if CLEAR_LIVE_STATE_ON_START:
+            try:
+                r = await client.post(f"{BACKEND_URL}{RESET_PATH}")
+                r.raise_for_status()
+            except (httpx.HTTPError, OSError) as e:
+                print(f"live-state reset: {e}", file=sys.stderr)
         while True:
             try:
                 await _tick(client, last_seq)

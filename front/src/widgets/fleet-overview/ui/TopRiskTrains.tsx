@@ -40,7 +40,7 @@ export function TopRiskTrains() {
               className="text-xs font-semibold truncate"
               style={{ color: "var(--text-primary)" }}
             >
-              {item.id}
+              {item.label}
             </div>
             <div
               className="text-[10px] truncate"

@@ -93,7 +93,7 @@ export function AlertCard({ alert, isSelected, onSelect, onNavigate }: AlertCard
           className="text-xs font-bold"
           style={{ color: "var(--text-primary)" }}
         >
-          {alert.trainId}
+          {alert.trainLabel}
         </div>
 
         <div

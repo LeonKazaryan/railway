@@ -47,6 +47,7 @@ public class TrainWsMapper {
                 .faultCodes(state.getFaultCodes())
                 .currentMode(state.getCurrentMode())
                 .parameterZones(state.getParameterZones())
+                .routePathCoordinates(state.getRoutePathCoordinates())
                 .build();
     }
 

@@ -45,6 +45,7 @@ export function TwinPage({ trainId }: TwinPageProps) {
 
   const trainDetail: TrainDetail = {
     id: trainId,
+    label: baseTrain?.label ?? trainId,
     model: baseTrain?.model ?? "TE33A",
     status: baseTrain?.status ?? "normal",
     healthScore: baseTrain?.healthScore ?? 0,

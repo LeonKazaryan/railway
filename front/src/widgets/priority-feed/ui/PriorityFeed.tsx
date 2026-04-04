@@ -27,7 +27,8 @@ function deriveAlerts(trains: Map<string, WsTrainState>): Alert[] {
   let idx = 0;
 
   for (const [, ws] of trains) {
-    const id = ws.trainId ?? ws.locomotiveId;
+    const id = ws.locomotiveId;
+    const label = ws.trainId ?? ws.serialNumber ?? ws.locomotiveId;
     const zones = ws.parameterZones;
     const h = ws.healthIndex ?? 100;
     const minutesAgo = Math.max(
@@ -54,6 +55,7 @@ function deriveAlerts(trains: Map<string, WsTrainState>): Alert[] {
         alerts.push({
           id: `live-${idx++}`,
           trainId: id,
+          trainLabel: label,
           severity: "critical",
           messageKey: redParams[0],
           minutesAgo,
@@ -69,6 +71,7 @@ function deriveAlerts(trains: Map<string, WsTrainState>): Alert[] {
         alerts.push({
           id: `live-${idx++}`,
           trainId: id,
+          trainLabel: label,
           severity: "warning",
           messageKey: yellowParams[0],
           minutesAgo,
@@ -89,6 +92,7 @@ function deriveAlerts(trains: Map<string, WsTrainState>): Alert[] {
     alerts.push({
       id: `live-${idx++}`,
       trainId: id,
+      trainLabel: label,
       severity,
       messageKey: ws.faultCodes?.[0] ?? severity,
       minutesAgo,

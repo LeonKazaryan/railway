@@ -7,77 +7,264 @@ import {
   MAP_STYLE_LIGHT,
 } from "@/shared/config/map.config";
 import {
-  useFleetLiveStore,
+  deriveTrainStatus,
+  useFleetTrainsMapDebounced,
   wsToTrain,
+  type WsTrainState,
 } from "@/features/fleet-live/model/store";
 import { useTrainSelectionStore } from "@/features/train-selection/model/store";
-import { useLocaleStore } from "@/features/locale/model/store";
 import { useThemeStore } from "@/features/theme/model/store";
 import type { AppTheme } from "@/features/theme/model/store";
-import type { Train } from "@/entities/train/model/types";
-import { KZ_RAIL_ROUTES } from "../config/routes";
-import {
-  createTrainMarkerElement,
-  trainMarkerVisualKey,
-} from "./TrainMarker";
+import { TRAIN_STATUS_CONFIG } from "@/entities/train/model/config";
 
-const STATUS_LINE_COLORS: Record<string, string> = {
-  normal: "#38bdf8",
-  warning: "#f59e0b",
-  critical: "#f43f5e",
-};
-
-const POS_EPS = 1e-7;
+const FLEET_GRAPH_SOURCE = "fleet-graph-routes";
+const FLEET_GRAPH_LAYER_GLOW = "fleet-graph-routes-glow";
+const FLEET_GRAPH_LAYER = "fleet-graph-routes-line";
+const FLEET_TRAIN_SOURCE = "fleet-train-points";
+const FLEET_TRAIN_DOT_LAYER = "fleet-train-points-dot";
+const FLEET_TRAIN_SELECTED_LAYER = "fleet-train-points-selected";
+const FLEET_TRAIN_LABEL_LAYER = "fleet-train-points-label";
 
 function mapStyleUrl(theme: AppTheme) {
   return theme === "light" ? MAP_STYLE_LIGHT : MAP_STYLE_DARK;
 }
 
-function addRouteLayers(map: maplibregl.Map) {
-  KZ_RAIL_ROUTES.features.forEach((feature, idx) => {
-    const status = (feature.properties?.status as string) ?? "normal";
-    const sourceId = `route-${idx}`;
-    const layerId = `route-line-${idx}`;
+function ensureFleetGraphRouteLayers(map: maplibregl.Map) {
+  if (map.getSource(FLEET_GRAPH_SOURCE)) return;
 
-    map.addSource(sourceId, { type: "geojson", data: feature });
-
-    map.addLayer({
-      id: `${layerId}-glow`,
-      type: "line",
-      source: sourceId,
-      paint: {
-        "line-color":
-          STATUS_LINE_COLORS[status] ?? STATUS_LINE_COLORS.normal,
-        "line-width": 6,
-        "line-opacity": 0.12,
-        "line-blur": 4,
-      },
-    });
-
-    map.addLayer({
-      id: layerId,
-      type: "line",
-      source: sourceId,
-      paint: {
-        "line-color":
-          STATUS_LINE_COLORS[status] ?? STATUS_LINE_COLORS.normal,
-        "line-width": 1.5,
-        "line-opacity": 0.7,
-      },
-    });
+  map.addSource(FLEET_GRAPH_SOURCE, {
+    type: "geojson",
+    data: { type: "FeatureCollection", features: [] },
   });
+
+  const lineColorExpr: maplibregl.ExpressionSpecification = [
+    "match",
+    ["get", "status"],
+    "normal",
+    TRAIN_STATUS_CONFIG.normal.color,
+    "warning",
+    TRAIN_STATUS_CONFIG.warning.color,
+    "critical",
+    TRAIN_STATUS_CONFIG.critical.color,
+    "no_signal",
+    TRAIN_STATUS_CONFIG.no_signal.color,
+    TRAIN_STATUS_CONFIG.normal.color,
+  ];
+
+  map.addLayer({
+    id: FLEET_GRAPH_LAYER_GLOW,
+    type: "line",
+    source: FLEET_GRAPH_SOURCE,
+    paint: {
+      "line-color": lineColorExpr,
+      "line-width": 7,
+      "line-opacity": 0.12,
+      "line-blur": 3,
+    },
+  });
+
+  map.addLayer({
+    id: FLEET_GRAPH_LAYER,
+    type: "line",
+    source: FLEET_GRAPH_SOURCE,
+    paint: {
+      "line-color": lineColorExpr,
+      "line-width": 2,
+      "line-opacity": 0.75,
+    },
+  });
+}
+
+function ensureFleetTrainLayers(map: maplibregl.Map, theme: AppTheme) {
+  if (!map.getSource(FLEET_TRAIN_SOURCE)) {
+    map.addSource(FLEET_TRAIN_SOURCE, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+  }
+
+  const circleColorExpr: maplibregl.ExpressionSpecification = [
+    "match",
+    ["get", "status"],
+    "normal",
+    TRAIN_STATUS_CONFIG.normal.color,
+    "warning",
+    TRAIN_STATUS_CONFIG.warning.color,
+    "critical",
+    TRAIN_STATUS_CONFIG.critical.color,
+    "no_signal",
+    TRAIN_STATUS_CONFIG.no_signal.color,
+    TRAIN_STATUS_CONFIG.normal.color,
+  ];
+
+  if (!map.getLayer(FLEET_TRAIN_SELECTED_LAYER)) {
+    map.addLayer({
+      id: FLEET_TRAIN_SELECTED_LAYER,
+      type: "circle",
+      source: FLEET_TRAIN_SOURCE,
+      filter: ["==", ["get", "selected"], true],
+      paint: {
+        "circle-radius": 11,
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-width": 2,
+        "circle-stroke-color": circleColorExpr,
+        "circle-opacity": 0.7,
+      },
+    });
+  }
+
+  if (!map.getLayer(FLEET_TRAIN_DOT_LAYER)) {
+    map.addLayer({
+      id: FLEET_TRAIN_DOT_LAYER,
+      type: "circle",
+      source: FLEET_TRAIN_SOURCE,
+      paint: {
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          4,
+          5,
+          6,
+          6,
+          10,
+          7,
+        ],
+        "circle-color": circleColorExpr,
+        "circle-stroke-width": 2,
+        "circle-stroke-color":
+          theme === "light" ? "rgba(255,255,255,0.95)" : "rgba(10,13,20,0.95)",
+        "circle-blur": 0.02,
+      },
+    });
+  }
+
+  if (!map.getLayer(FLEET_TRAIN_LABEL_LAYER)) {
+    map.addLayer({
+      id: FLEET_TRAIN_LABEL_LAYER,
+      type: "symbol",
+      source: FLEET_TRAIN_SOURCE,
+      layout: {
+        "text-field": ["get", "labelText"],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-size": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          4,
+          10,
+          8,
+          11,
+          12,
+          12,
+        ],
+        "text-anchor": "bottom",
+        "text-offset": [0, -1.1],
+        "text-letter-spacing": 0.04,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": circleColorExpr,
+        "text-halo-width": 3,
+        "text-halo-blur": 0.6,
+        "text-halo-color":
+          theme === "light" ? "rgba(255,255,255,0.96)" : "rgba(10,13,20,0.92)",
+      },
+    });
+  }
+}
+
+function setupMapOverlays(map: maplibregl.Map, theme: AppTheme) {
+  ensureFleetGraphRouteLayers(map);
+  ensureFleetTrainLayers(map, theme);
+}
+
+function buildFleetGraphRoutesFc(
+  trainsMap: Map<string, WsTrainState>,
+): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = [];
+  for (const ws of trainsMap.values()) {
+    const coords = ws.routePathCoordinates;
+    if (!coords || coords.length < 2) continue;
+    features.push({
+      type: "Feature",
+      id: ws.locomotiveId,
+      properties: {
+        locomotiveId: ws.locomotiveId,
+        status: deriveTrainStatus(ws),
+      },
+      geometry: { type: "LineString", coordinates: coords },
+    });
+  }
+  return { type: "FeatureCollection", features };
+}
+
+function buildFleetTrainPointsFc(
+  trainsMap: Map<string, WsTrainState>,
+  selectedId: string | null,
+): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = [];
+  for (const ws of trainsMap.values()) {
+    const lng = ws.lon;
+    const lat = ws.lat;
+    if (
+      ws.locomotiveId == null ||
+      lng == null ||
+      lat == null ||
+      !Number.isFinite(lng) ||
+      !Number.isFinite(lat)
+    ) {
+      continue;
+    }
+    const train = wsToTrain(ws);
+    const health = ws.healthIndex ?? train.healthScore;
+    const speed = Math.round(ws.speedKph ?? 0);
+    const suffix = speed > 0 ? ` ${health} ${speed}` : ` ${health}`;
+    features.push({
+      type: "Feature",
+      id: train.id,
+      properties: {
+        locomotiveId: train.id,
+        status: train.status,
+        selected: selectedId === train.id,
+        labelText: `${train.label}${suffix}`,
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [lng, lat],
+      },
+    });
+  }
+  return { type: "FeatureCollection", features };
+}
+
+function syncMapData(
+  map: maplibregl.Map,
+  trainsMap: Map<string, WsTrainState>,
+  selectedId: string | null,
+  theme: AppTheme,
+) {
+  if (!map.isStyleLoaded()) return;
+  setupMapOverlays(map, theme);
+
+  const routesSource = map.getSource(FLEET_GRAPH_SOURCE) as
+    | maplibregl.GeoJSONSource
+    | undefined;
+  routesSource?.setData(buildFleetGraphRoutesFc(trainsMap));
+
+  const trainsSource = map.getSource(FLEET_TRAIN_SOURCE) as
+    | maplibregl.GeoJSONSource
+    | undefined;
+  trainsSource?.setData(buildFleetTrainPointsFc(trainsMap, selectedId));
 }
 
 export function FleetMap() {
   const theme = useThemeStore((s) => s.theme);
+  const trainsMap = useFleetTrainsMapDebounced();
+  const selectedId = useTrainSelectionStore((s) => s.selectedTrainId);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
-  const lastVisualKeyRef = useRef<Map<string, string>>(new Map());
-  const lastPosRef = useRef<Map<string, { lng: number; lat: number }>>(
-    new Map(),
-  );
-  const rafRef = useRef<number | null>(null);
   const skipThemeStyleOnce = useRef(true);
   const [mapLoaded, setMapLoaded] = useState(false);
 
@@ -102,16 +289,39 @@ export function FleetMap() {
       "bottom-right",
     );
 
+    map.on("click", (e) => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: [FLEET_TRAIN_DOT_LAYER, FLEET_TRAIN_LABEL_LAYER],
+      });
+      const locomotiveId = features[0]?.properties?.locomotiveId;
+      useTrainSelectionStore
+        .getState()
+        .setSelectedTrain(
+          typeof locomotiveId === "string" && locomotiveId.length > 0
+            ? locomotiveId
+            : null,
+        );
+    });
+
+    map.on("mousemove", (e) => {
+      const interactive = map.queryRenderedFeatures(e.point, {
+        layers: [FLEET_TRAIN_DOT_LAYER, FLEET_TRAIN_LABEL_LAYER],
+      });
+      map.getCanvas().style.cursor = interactive.length > 0 ? "pointer" : "";
+    });
+
     map.on("load", () => {
+      map.setProjection({ type: "mercator" });
       const themeNow = useThemeStore.getState().theme;
       if (themeNow !== initialTheme) {
         map.setStyle(mapStyleUrl(themeNow));
         map.once("styledata", () => {
           if (!map.isStyleLoaded()) return;
-          addRouteLayers(map);
+          map.setProjection({ type: "mercator" });
+          setupMapOverlays(map, themeNow);
         });
       } else {
-        addRouteLayers(map);
+        setupMapOverlays(map, themeNow);
       }
       setMapLoaded(true);
     });
@@ -119,9 +329,6 @@ export function FleetMap() {
     return () => {
       map.remove();
       mapRef.current = null;
-      markersRef.current.clear();
-      lastVisualKeyRef.current.clear();
-      lastPosRef.current.clear();
     };
   }, []);
 
@@ -135,111 +342,15 @@ export function FleetMap() {
     map.setStyle(mapStyleUrl(theme));
     map.once("styledata", () => {
       if (!map.isStyleLoaded()) return;
-      addRouteLayers(map);
+      map.setProjection({ type: "mercator" });
+      syncMapData(map, trainsMap, selectedId, theme);
     });
   }, [theme, mapLoaded]);
 
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
-    const map = mapRef.current;
-
-    const scheduleSync = () => {
-      if (rafRef.current != null) return;
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null;
-        const trainsMap = useFleetLiveStore.getState().trains;
-        const selectedId = useTrainSelectionStore.getState().selectedTrainId;
-        const th = useThemeStore.getState().theme;
-        const loc = useLocaleStore.getState().locale;
-
-        const trains: Train[] = Array.from(trainsMap.values()).map(wsToTrain);
-        const currentIds = new Set(trains.map((t) => t.id));
-
-        markersRef.current.forEach((marker, id) => {
-          if (!currentIds.has(id)) {
-            marker.remove();
-            markersRef.current.delete(id);
-            lastVisualKeyRef.current.delete(id);
-            lastPosRef.current.delete(id);
-          }
-        });
-
-        for (const train of trains) {
-          const lng = train.position.lng;
-          const lat = train.position.lat;
-          const pos: [number, number] = [lng, lat];
-          const isSelected = selectedId === train.id;
-          const vk = trainMarkerVisualKey(train, isSelected, th, loc);
-          const existing = markersRef.current.get(train.id);
-
-          if (!existing) {
-            const el = createTrainMarkerElement(train, isSelected, th);
-            el.addEventListener("click", () => {
-              useTrainSelectionStore.getState().setSelectedTrain(train.id);
-            });
-            const marker = new maplibregl.Marker({
-              element: el,
-              anchor: "center",
-            })
-              .setLngLat(pos)
-              .addTo(map);
-            markersRef.current.set(train.id, marker);
-            lastVisualKeyRef.current.set(train.id, vk);
-            lastPosRef.current.set(train.id, { lng, lat });
-            continue;
-          }
-
-          const prevPos = lastPosRef.current.get(train.id);
-          const moved =
-            !prevPos ||
-            Math.abs(prevPos.lng - lng) > POS_EPS ||
-            Math.abs(prevPos.lat - lat) > POS_EPS;
-          if (moved) {
-            existing.setLngLat(pos);
-            lastPosRef.current.set(train.id, { lng, lat });
-          }
-
-          const prevVk = lastVisualKeyRef.current.get(train.id);
-          if (prevVk === vk) continue;
-
-          existing.remove();
-          markersRef.current.delete(train.id);
-          lastVisualKeyRef.current.delete(train.id);
-
-          const el = createTrainMarkerElement(train, isSelected, th);
-          el.addEventListener("click", () => {
-            useTrainSelectionStore.getState().setSelectedTrain(train.id);
-          });
-          const marker = new maplibregl.Marker({
-            element: el,
-            anchor: "center",
-          })
-            .setLngLat(pos)
-            .addTo(map);
-          markersRef.current.set(train.id, marker);
-          lastVisualKeyRef.current.set(train.id, vk);
-          lastPosRef.current.set(train.id, { lng, lat });
-        }
-      });
-    };
-
-    const unsubs = [
-      useFleetLiveStore.subscribe(scheduleSync),
-      useTrainSelectionStore.subscribe(scheduleSync),
-      useThemeStore.subscribe(scheduleSync),
-      useLocaleStore.subscribe(scheduleSync),
-    ];
-
-    scheduleSync();
-
-    return () => {
-      unsubs.forEach((u) => u());
-      if (rafRef.current != null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-    };
-  }, [mapLoaded]);
+    syncMapData(mapRef.current, trainsMap, selectedId, theme);
+  }, [mapLoaded, trainsMap, selectedId, theme]);
 
   return (
     <div
