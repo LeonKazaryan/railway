@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Bell, Settings, Filter } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
+import { useFleetLayoutStore } from '@/features/fleet-layout/model/store'
 import logoUrl from '../../../../assets/logo.png'
 
 const NAV_TABS = [
@@ -14,6 +15,8 @@ type TabId = (typeof NAV_TABS)[number]['id']
 export function TopBar() {
   const [activeTab, setActiveTab] = useState<TabId>('fleet')
   const [time, setTime] = useState(() => new Date())
+  const priorityFeedOpen = useFleetLayoutStore((s) => s.priorityFeedOpen)
+  const togglePriorityFeed = useFleetLayoutStore((s) => s.togglePriorityFeed)
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000)
@@ -85,10 +88,21 @@ export function TopBar() {
       </div>
 
       <div className="ml-auto flex items-center gap-4">
-        <button className="relative" style={{ color: 'var(--text-secondary)' }}>
+        <button
+          type="button"
+          onClick={togglePriorityFeed}
+          aria-expanded={priorityFeedOpen}
+          aria-controls="priority-feed-panel"
+          aria-label={priorityFeedOpen ? 'Hide priority feed' : 'Show priority feed'}
+          className={cn(
+            'relative rounded-lg p-1.5 transition-colors',
+            priorityFeedOpen && 'bg-[rgba(56,189,248,0.12)]',
+          )}
+          style={{ color: priorityFeedOpen ? 'var(--accent-primary)' : 'var(--text-secondary)' }}
+        >
           <Bell size={16} />
           <span
-            className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
+            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
             style={{ backgroundColor: 'var(--danger)' }}
           />
         </button>
