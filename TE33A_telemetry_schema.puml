@@ -1,0 +1,169 @@
+@startuml
+hide circle
+skinparam backgroundColor white
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Aptos
+skinparam entity {
+  BackgroundColor #F8FBFF
+  BorderColor #4F81BD
+  FontColor #1B3A58
+}
+skinparam note {
+  BackgroundColor #FFF8DC
+  BorderColor #C9B458
+}
+
+entity "LOCOMOTIVE" as LOCOMOTIVE {
+  *locomotive_id : uuid
+  --
+  model : text <<TE33A>>
+  serial_number : text
+  operator_name : text
+  created_at : timestamptz
+}
+
+entity "TRAIN_RUN" as TRAIN_RUN {
+  *train_run_id : uuid
+  --
+  train_id : text
+  locomotive_id : uuid <<FK>>
+  route_id : uuid <<FK>>
+  started_at : timestamptz
+  ended_at : timestamptz
+  status : text
+}
+
+entity "ROUTE" as ROUTE {
+  *route_id : uuid
+  --
+  name : text
+  waypoints : jsonb
+  route_geom : geometry
+  speed_profile : jsonb
+}
+
+entity "GEOFENCE" as GEOFENCE {
+  *geofence_id : uuid
+  --
+  name : text
+  type : text
+  geom : geometry
+  rules : jsonb
+}
+
+entity "TELEMETRY_RAW" as TELEMETRY_RAW {
+  *ts : timestamptz
+  *locomotive_id : uuid
+  *seq : bigint
+  --
+  train_run_id : uuid <<FK>>
+  route_id : uuid <<FK>>
+  geofence_id : uuid <<FK>>
+  lat : double
+  lon : double
+  alt_m : double
+  speed_kph : real
+  heading_deg : real
+  brake_pipe_pressure_kpa : real
+  main_reservoir_pressure_kpa : real
+  brake_cylinder_pressure_kpa : real
+  brake_pipe_leak_kpa_per_min : real
+  brake_status : text
+  battery_voltage_v : real
+  traction_voltage_v : real
+  current_a : real
+  engine_rpm : real
+  engine_temp_c : real
+  oil_temp_c : real
+  oil_pressure_ok : boolean
+  fuel_level_pct : real
+  fuel_consumption_rate : real
+  tractive_effort_kn : real
+  dynamic_brake_force_kn : real
+  alerter_timer_sec : real
+  pcs_open : boolean
+  alarm_status : smallint
+  fire_temp_c : real
+  comm_state : smallint
+  eab_status : smallint
+  fault_codes : text[]
+  health_index : smallint
+}
+
+entity "LOCOMOTIVE_STATE_CURRENT" as LOCOMOTIVE_STATE_CURRENT {
+  *locomotive_id : uuid
+  --
+  updated_at : timestamptz
+  last_ts : timestamptz
+  lat : double
+  lon : double
+  alt_m : double
+  speed_kph : real
+  heading_deg : real
+  brake_pipe_pressure_kpa : real
+  main_reservoir_pressure_kpa : real
+  engine_rpm : real
+  engine_temp_c : real
+  oil_temp_c : real
+  fuel_level_pct : real
+  health_index : smallint
+  active_faults : text[]
+  comm_state : smallint
+  alarm_status : smallint
+}
+
+entity "EVENT_LOG" as EVENT_LOG {
+  *event_id : uuid
+  --
+  ts : timestamptz
+  locomotive_id : uuid <<FK>>
+  train_run_id : uuid <<FK>>
+  event_type : text
+  severity : text
+  code : text
+  message : text
+  payload : jsonb
+}
+
+entity "PROXIMITY_EVENT" as PROXIMITY_EVENT {
+  *proximity_event_id : uuid
+  --
+  ts : timestamptz
+  locomotive_id : uuid <<FK>>
+  other_locomotive_id : uuid
+  distance_m : real
+  rel_bearing_deg : real
+  severity : text
+}
+
+entity "ALERT_RULE" as ALERT_RULE {
+  *alert_rule_id : uuid
+  --
+  metric_code : text
+  condition_expr : text
+  severity : text
+  title : text
+  description : text
+  action_hint : text
+  enabled : boolean
+}
+
+LOCOMOTIVE ||--o{ TRAIN_RUN : assigned_to
+ROUTE ||--o{ TRAIN_RUN : has
+LOCOMOTIVE ||--o{ TELEMETRY_RAW : emits
+TRAIN_RUN ||--o{ TELEMETRY_RAW : groups
+ROUTE ||--o{ TELEMETRY_RAW : context
+GEOFENCE ||--o{ TELEMETRY_RAW : membership
+LOCOMOTIVE ||--|| LOCOMOTIVE_STATE_CURRENT : latest
+LOCOMOTIVE ||--o{ EVENT_LOG : produces
+TRAIN_RUN ||--o{ EVENT_LOG : within
+LOCOMOTIVE ||--o{ PROXIMITY_EVENT : near
+ALERT_RULE ..> TELEMETRY_RAW : evaluates
+
+note bottom of TELEMETRY_RAW
+  Потоковая телеметрия для TE33A.
+  Базовая таблица для radar UI,
+  replay, health index и alerting.
+end note
+@enduml
