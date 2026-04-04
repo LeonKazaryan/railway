@@ -31,5 +31,6 @@ public class SpringTrainUpdatesPublisher implements TrainUpdatesPublisher {
     @Override
     public void publishAlert(UUID trainId, AlertWsMessage message) {
         messagingTemplate.convertAndSend(WsTopics.trainAlerts(trainId), message);
+        messagingTemplate.convertAndSend(WsTopics.FLEET_ALERTS, message);
     }
 }

@@ -53,13 +53,14 @@ export interface WsTrainState {
   healthStatus: string | null;
   faultCodes: string[] | null;
   currentMode: string | null;
+  parameterZones: Record<string, "green" | "yellow" | "red"> | null;
 }
 
 function deriveStatus(ws: WsTrainState): TrainStatus {
   if (ws.commState === "offline" || ws.commState === null) return "no_signal";
   const h = ws.healthIndex ?? 100;
-  if (h < 50) return "critical";
-  if (h < 75) return "warning";
+  if (h < 70) return "critical";
+  if (h <= 90) return "warning";
   return "normal";
 }
 
@@ -222,7 +223,7 @@ function computeFleetStats() {
 
 function computeTopRiskRows() {
   return Array.from(useFleetLiveStore.getState().trains.values())
-    .filter((ws) => (ws.healthIndex ?? 100) < 80)
+    .filter((ws) => (ws.healthIndex ?? 100) < 90)
     .sort((a, b) => (a.healthIndex ?? 100) - (b.healthIndex ?? 100))
     .slice(0, 5)
     .map((ws) => ({

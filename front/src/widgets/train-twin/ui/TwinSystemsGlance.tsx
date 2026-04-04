@@ -18,9 +18,10 @@ const BOTTOM_ZONES: SystemZoneId[] = ["traction", "bogies"];
 interface TwinSystemsGlanceProps {
   snapshot: TelemetrySnapshot;
   model: TrainModel;
+  parameterZones: Record<string, "green" | "yellow" | "red"> | null;
 }
 
-export function TwinSystemsGlance({ snapshot, model }: TwinSystemsGlanceProps) {
+export function TwinSystemsGlance({ snapshot, model, parameterZones }: TwinSystemsGlanceProps) {
   const { t } = useTranslation();
   const zoneMap = Object.fromEntries(SYSTEM_ZONE_CONFIG.map((z) => [z.id, z]));
 
@@ -59,7 +60,7 @@ export function TwinSystemsGlance({ snapshot, model }: TwinSystemsGlanceProps) {
           <div className="flex flex-col gap-2 justify-center">
             {LEFT_ZONES.map((id) => (
               <div key={id} ref={setZoneRef(id)}>
-                <SystemCard zone={zoneMap[id]} snapshot={snapshot} />
+                <SystemCard zone={zoneMap[id]} snapshot={snapshot} parameterZones={parameterZones} />
               </div>
             ))}
           </div>
@@ -71,7 +72,7 @@ export function TwinSystemsGlance({ snapshot, model }: TwinSystemsGlanceProps) {
             <div className="flex gap-2 justify-center">
               {BOTTOM_ZONES.map((id) => (
                 <div key={id} ref={setZoneRef(id)}>
-                  <SystemCard zone={zoneMap[id]} snapshot={snapshot} />
+                  <SystemCard zone={zoneMap[id]} snapshot={snapshot} parameterZones={parameterZones} />
                 </div>
               ))}
             </div>
@@ -80,7 +81,7 @@ export function TwinSystemsGlance({ snapshot, model }: TwinSystemsGlanceProps) {
           <div className="flex flex-col gap-2 justify-center">
             {RIGHT_ZONES.map((id) => (
               <div key={id} ref={setZoneRef(id)}>
-                <SystemCard zone={zoneMap[id]} snapshot={snapshot} />
+                <SystemCard zone={zoneMap[id]} snapshot={snapshot} parameterZones={parameterZones} />
               </div>
             ))}
           </div>

@@ -46,6 +46,7 @@ public class TrainWsMapper {
                 .healthStatus(state.getHealthStatus())
                 .faultCodes(state.getFaultCodes())
                 .currentMode(state.getCurrentMode())
+                .parameterZones(state.getParameterZones())
                 .build();
     }
 

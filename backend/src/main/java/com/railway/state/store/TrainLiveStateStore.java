@@ -15,7 +15,8 @@ public class TrainLiveStateStore {
 
     private final Map<UUID, TrainLiveState> store = new ConcurrentHashMap<>();
 
-    public TrainLiveState upsert(TelemetryRawRequest request, Integer healthIndex, String healthStatus) {
+    public TrainLiveState upsert(TelemetryRawRequest request, Integer healthIndex,
+                                  String healthStatus, Map<String, String> parameterZones) {
         return store.compute(request.getLocomotiveId(), (id, current) -> {
             if (current != null && current.getSeq() != null && request.getSeq() <= current.getSeq()) {
                 return current;
@@ -54,10 +55,11 @@ public class TrainLiveStateStore {
                     .eabStatus(request.getEabStatus())
                     .commState(request.getCommState())
                     .alarmStatus(request.getAlarmStatus())
-                    .healthIndex(request.getHealthIndex() != null ? request.getHealthIndex() : healthIndex)
+                    .healthIndex(healthIndex)
                     .healthStatus(healthStatus)
                     .faultCodes(request.getFaultCodes() == null ? List.of() : request.getFaultCodes())
                     .currentMode(request.getCurrentMode())
+                    .parameterZones(parameterZones)
                     .build();
         });
     }

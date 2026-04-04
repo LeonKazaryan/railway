@@ -1,13 +1,13 @@
 import { ExternalLink, AlertTriangle, Info, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Alert } from "@/entities/alert/model/types";
+import { cn } from "@/shared/lib/cn";
 
 const ALERT_SEVERITY_STYLE = {
   critical: { color: "#f43f5e", bgColor: "rgba(244,63,94,0.12)" },
   warning: { color: "#f59e0b", bgColor: "rgba(245,158,11,0.10)" },
   info: { color: "#38bdf8", bgColor: "rgba(56,189,248,0.08)" },
 } as const;
-import { cn } from "@/shared/lib/cn";
 
 const SEVERITY_ICONS = {
   critical: Zap,
@@ -25,14 +25,18 @@ interface AlertCardProps {
   alert: Alert;
   isSelected?: boolean;
   onSelect?: (id: string) => void;
+  onNavigate?: () => void;
 }
 
-export function AlertCard({ alert, isSelected, onSelect }: AlertCardProps) {
+export function AlertCard({ alert, isSelected, onSelect, onNavigate }: AlertCardProps) {
   const { t } = useTranslation();
   const cfg = ALERT_SEVERITY_STYLE[alert.severity];
   const Icon = SEVERITY_ICONS[alert.severity];
-  const description = t(`alerts.mock.${alert.messageKey}.description`);
-  const suggested = t(`alerts.mock.${alert.messageKey}.suggested`);
+  const description =
+    alert.description ?? t(`alerts.mock.${alert.messageKey}.description`);
+  const suggested = alert.description
+    ? undefined
+    : t(`alerts.mock.${alert.messageKey}.suggested`);
 
   return (
     <div
@@ -111,6 +115,10 @@ export function AlertCard({ alert, isSelected, onSelect }: AlertCardProps) {
         {alert.severity !== "info" && (
           <button
             type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate?.();
+            }}
             className="mt-1 flex items-center gap-1 text-[9px] font-semibold px-2 py-1 rounded self-start transition-all hover:opacity-80"
             style={{
               backgroundColor: cfg.color + "18",

@@ -17,16 +17,30 @@ const STATUS_ICON: Record<SystemZoneStatus, string> = {
   low: "↓",
 };
 
+type ServerZone = "green" | "yellow" | "red";
+
+function serverZoneToStatus(sz: ServerZone): SystemZoneStatus {
+  if (sz === "red") return "critical";
+  if (sz === "yellow") return "warning";
+  return "normal";
+}
+
 interface SystemCardProps {
   zone: SystemZoneConfig;
   snapshot: TelemetrySnapshot;
+  parameterZones?: Record<string, ServerZone> | null;
 }
 
-export function SystemCard({ zone, snapshot }: SystemCardProps) {
+export function SystemCard({ zone, snapshot, parameterZones }: SystemCardProps) {
   const { t } = useTranslation();
   const rawValue = snapshot[zone.metricKey] as number;
-  const status = getSystemZoneStatus(zone, rawValue);
   const displayValue = getSystemZoneDisplayValue(zone, rawValue);
+
+  const serverZone = parameterZones?.[zone.metricKey] as ServerZone | undefined;
+  const status: SystemZoneStatus = serverZone
+    ? serverZoneToStatus(serverZone)
+    : getSystemZoneStatus(zone, rawValue);
+
   const color = SYSTEM_ZONE_STATUS_COLORS[status];
   const statusLabel = t(`twin.zoneStatus.${zone.id}.${status}`);
 

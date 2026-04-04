@@ -132,7 +132,11 @@ export function TwinPage({ trainId }: TwinPageProps) {
 
         <main className="flex flex-col flex-1 overflow-hidden">
           {activeTab === "overview" && (
-            <TwinOverview buffer={buffer} train={trainDetail} />
+            <TwinOverview
+              buffer={buffer}
+              train={trainDetail}
+              parameterZones={ws?.parameterZones ?? null}
+            />
           )}
           {activeTab !== "overview" && (
             <div className="flex-1 flex items-center justify-center">

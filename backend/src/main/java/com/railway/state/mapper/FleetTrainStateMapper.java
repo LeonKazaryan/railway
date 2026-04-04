@@ -53,10 +53,10 @@ public class FleetTrainStateMapper {
                 return HealthStatus.NORMAL;
             }
         }
-        if (hi < 50) {
+        if (hi < 70) {
             return HealthStatus.CRITICAL;
         }
-        if (hi < 75) {
+        if (hi <= 90) {
             return HealthStatus.WARNING;
         }
         return HealthStatus.NORMAL;

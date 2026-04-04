@@ -8,4 +8,5 @@ export interface Alert {
   minutesAgo: number;
   time: string;
   isNew?: boolean;
+  description?: string;
 }
