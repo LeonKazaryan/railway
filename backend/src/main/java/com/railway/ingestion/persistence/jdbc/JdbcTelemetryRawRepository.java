@@ -3,9 +3,6 @@ package com.railway.ingestion.persistence.jdbc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.railway.ingestion.dto.TelemetryRawRequest;
-import com.railway.ingestion.enumtype.AlarmStatus;
-import com.railway.ingestion.enumtype.CommState;
-import com.railway.ingestion.enumtype.DoorsState;
 import com.railway.ingestion.port.TelemetryRawPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.postgresql.util.PGobject;
@@ -28,101 +25,130 @@ public class JdbcTelemetryRawRepository implements TelemetryRawPersistencePort {
     private final ObjectMapper objectMapper;
 
     private static final String SQL = """
-            insert into telemetry_raw (
-                ts,
-                locomotive_id,
-                seq,
-                train_run_id,
-                route_id,
-                lat,
-                lon,
-                alt_m,
-                speed_kph,
-                heading_deg,
-                voltage_v,
-                current_a,
-                motor_temp_c,
-                brake_pressure_kpa,
-                fuel_level_pct,
-                energy_level_pct,
-                doors_state,
-                alarm_status,
-                comm_state,
-                fault_codes,
-                driver_state
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            on conflict (ts, locomotive_id, seq) do nothing
+            INSERT INTO telemetry_raw (
+                ts, locomotive_id, seq,
+                serial_number, train_id, line_id, line_name,
+                train_run_id, route_id, geofence_id, active_geofences,
+                lat, lon, alt_m,
+                speed_kph, heading_deg,
+                brake_pipe_pressure_kpa, main_reservoir_pressure_kpa,
+                brake_cylinder_pressure_kpa, brake_pipe_leak_kpa_per_min,
+                brake_status,
+                battery_voltage_v, traction_voltage_v, current_a,
+                engine_rpm, engine_temp_c, oil_temp_c,
+                fuel_level_pct, fuel_consumption_rate_lph,
+                tractive_effort_kn, dynamic_brake_force_kn,
+                alerter_timer_sec, pcs_open, eab_status,
+                comm_state, alarm_status,
+                fault_codes, health_index,
+                driver_state,
+                weather_factor, track_grade_pct, current_mode
+            ) VALUES (
+                ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?,
+                ?, ?,
+                ?, ?,
+                ?, ?,
+                ?,
+                ?, ?, ?,
+                ?, ?, ?,
+                ?, ?,
+                ?, ?,
+                ?, ?, ?,
+                ?, ?,
+                ?, ?,
+                ?,
+                ?, ?, ?
+            )
+            ON CONFLICT (ts, locomotive_id, seq) DO NOTHING
             """;
 
     @Override
-    public boolean insert(TelemetryRawRequest request, Integer healthIndex) {
+    public boolean insert(TelemetryRawRequest r, Integer healthIndex) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(SQL)) {
 
-            ps.setObject(1, OffsetDateTime.ofInstant(request.getTs(), ZoneOffset.UTC));
-            ps.setObject(2, request.getLocomotiveId());
-            ps.setLong(3, request.getSeq());
+            int i = 1;
 
-            ps.setObject(4, request.getTrainRunId());
-            ps.setObject(5, request.getRouteId());
+            ps.setObject(i++, OffsetDateTime.ofInstant(r.getTs(), ZoneOffset.UTC));
+            ps.setObject(i++, r.getLocomotiveId());
+            ps.setLong(i++, r.getSeq());
 
-            ps.setObject(6, request.getLat(), Types.DOUBLE);
-            ps.setObject(7, request.getLon(), Types.DOUBLE);
-            ps.setObject(8, request.getAltM(), Types.DOUBLE);
+            ps.setString(i++, r.getSerialNumber());
+            ps.setString(i++, r.getTrainId());
+            ps.setString(i++, r.getLineId());
+            ps.setString(i++, r.getLineName());
 
-            ps.setObject(9, request.getSpeedKph(), Types.REAL);
-            ps.setObject(10, request.getHeadingDeg(), Types.REAL);
-            ps.setObject(11, request.getVoltageV(), Types.REAL);
-            ps.setObject(12, request.getCurrentA(), Types.REAL);
-            ps.setObject(13, request.getMotorTempC(), Types.REAL);
-            ps.setObject(14, request.getBrakePressureKpa(), Types.REAL);
-            ps.setObject(15, request.getFuelLevelPct(), Types.REAL);
-            ps.setObject(16, request.getEnergyLevelPct(), Types.REAL);
+            ps.setObject(i++, r.getTrainRunId());
+            ps.setString(i++, r.getRouteId());
+            ps.setObject(i++, r.getGeofenceId());
 
-            ps.setObject(17, toSmallInt(request.getDoorsState()), Types.SMALLINT);
-            ps.setObject(18, toSmallInt(request.getAlarmStatus()), Types.SMALLINT);
-            ps.setObject(19, toSmallInt(request.getCommState()), Types.SMALLINT);
+            Array geofencesArray = connection.createArrayOf(
+                    "text",
+                    r.getActiveGeofences() == null
+                            ? new String[0]
+                            : r.getActiveGeofences().toArray(new String[0])
+            );
+            ps.setArray(i++, geofencesArray);
+
+            ps.setObject(i++, r.getLat(), Types.DOUBLE);
+            ps.setObject(i++, r.getLon(), Types.DOUBLE);
+            ps.setObject(i++, r.getAltM(), Types.DOUBLE);
+
+            ps.setObject(i++, r.getSpeedKph(), Types.REAL);
+            ps.setObject(i++, r.getHeadingDeg(), Types.REAL);
+
+            ps.setObject(i++, r.getBrakePipePressureKpa(), Types.REAL);
+            ps.setObject(i++, r.getMainReservoirPressureKpa(), Types.REAL);
+            ps.setObject(i++, r.getBrakeCylinderPressureKpa(), Types.REAL);
+            ps.setObject(i++, r.getBrakePipeLeakKpaPerMin(), Types.REAL);
+            ps.setString(i++, r.getBrakeStatus());
+
+            ps.setObject(i++, r.getBatteryVoltageV(), Types.REAL);
+            ps.setObject(i++, r.getTractionVoltageV(), Types.REAL);
+            ps.setObject(i++, r.getCurrentA(), Types.REAL);
+
+            ps.setObject(i++, r.getEngineRpm(), Types.REAL);
+            ps.setObject(i++, r.getEngineTempC(), Types.REAL);
+            ps.setObject(i++, r.getOilTempC(), Types.REAL);
+
+            ps.setObject(i++, r.getFuelLevelPct(), Types.REAL);
+            ps.setObject(i++, r.getFuelConsumptionRateLph(), Types.REAL);
+
+            ps.setObject(i++, r.getTractiveEffortKn(), Types.REAL);
+            ps.setObject(i++, r.getDynamicBrakeForceKn(), Types.REAL);
+
+            ps.setObject(i++, r.getAlerterTimerSec(), Types.REAL);
+            ps.setObject(i++, r.getPcsOpen(), Types.BOOLEAN);
+            ps.setString(i++, r.getEabStatus());
+
+            ps.setString(i++, r.getCommState());
+            ps.setString(i++, r.getAlarmStatus());
 
             Array faultCodesArray = connection.createArrayOf(
                     "text",
-                    request.getFaultCodes() == null
+                    r.getFaultCodes() == null
                             ? new String[0]
-                            : request.getFaultCodes().toArray(new String[0])
+                            : r.getFaultCodes().toArray(new String[0])
             );
-            ps.setArray(20, faultCodesArray);
+            ps.setArray(i++, faultCodesArray);
+            ps.setObject(i++, r.getHealthIndex() != null ? r.getHealthIndex() : healthIndex, Types.SMALLINT);
 
             PGobject jsonbObject = new PGobject();
             jsonbObject.setType("jsonb");
-            jsonbObject.setValue(toJson(request.getDriverState()));
-            ps.setObject(21, jsonbObject);
+            jsonbObject.setValue(toJson(r.getDriverState()));
+            ps.setObject(i++, jsonbObject);
+
+            ps.setObject(i++, r.getWeatherFactor(), Types.REAL);
+            ps.setObject(i++, r.getTrackGradePct(), Types.REAL);
+            ps.setString(i++, r.getCurrentMode());
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Failed to insert telemetry_raw: " + e.getMessage(), e);
         }
-    }
-
-    private short toSmallInt(DoorsState state) {
-        return switch (state) {
-            case CLOSED -> 0;
-            case OPEN -> 1;
-        };
-    }
-
-    private short toSmallInt(AlarmStatus status) {
-        return switch (status) {
-            case NORMAL -> 0;
-            case WARNING -> 1;
-            case CRITICAL -> 2;
-        };
-    }
-
-    private short toSmallInt(CommState state) {
-        return switch (state) {
-            case OFFLINE -> 0;
-            case ONLINE -> 1;
-            case DEGRADED -> 2;
-        };
     }
 
     private String toJson(Object value) {

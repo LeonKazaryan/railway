@@ -16,24 +16,24 @@ public class AlertEngine {
         List<Alert> out = new ArrayList<>();
         Instant now = t.getTs() != null ? t.getTs() : Instant.now();
 
-        if (t.getMotorTempC() != null && t.getMotorTempC() > 100f) {
+        if (t.getEngineTempC() != null && t.getEngineTempC() > 100f) {
             out.add(Alert.builder()
                     .locomotiveId(t.getLocomotiveId())
                     .code("HIGH_COOLANT_TEMP")
                     .title("High coolant/motor temperature")
-                    .severity(t.getMotorTempC() > 110f ? Severity.CRITICAL : Severity.WARNING)
+                    .severity(t.getEngineTempC() > 110f ? Severity.CRITICAL : Severity.WARNING)
                     .suggestedAction("Reduce load, check cooling system")
                     .ts(now)
                     .open(true)
                     .build());
         }
 
-        if (t.getBrakePressureKpaEma() != null && t.getBrakePressureKpaEma() < 200f) {
+        if (t.getBrakePipePressureKpaEma() != null && t.getBrakePipePressureKpaEma() < 200f) {
             out.add(Alert.builder()
                     .locomotiveId(t.getLocomotiveId())
                     .code("BRAKE_PRESSURE_DROP")
                     .title("Brake pressure drop")
-                    .severity(t.getBrakePressureKpaEma() < 150f ? Severity.CRITICAL : Severity.WARNING)
+                    .severity(t.getBrakePipePressureKpaEma() < 150f ? Severity.CRITICAL : Severity.WARNING)
                     .suggestedAction("Inspect pneumatic system for leaks")
                     .ts(now)
                     .open(true)

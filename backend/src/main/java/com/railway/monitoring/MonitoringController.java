@@ -1,6 +1,6 @@
 package com.railway.monitoring;
 
-import com.railway.state.LiveStateAggregatorService;
+import com.railway.state.store.TrainLiveStateStore;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,14 +14,14 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class MonitoringController {
 
-    private final LiveStateAggregatorService aggregator;
+    private final TrainLiveStateStore trainLiveStateStore;
 
     @GetMapping("/health")
     public HealthRes health() {
         HealthRes h = new HealthRes();
         h.status = "UP";
         h.now = Instant.now().toString();
-        h.trains = aggregator.all().size();
+        h.trains = trainLiveStateStore.all().size();
         return h;
     }
 
@@ -29,7 +29,7 @@ public class MonitoringController {
     public MetricsRes metrics() {
         MetricsRes m = new MetricsRes();
         m.now = Instant.now().toString();
-        m.trains = aggregator.all().size();
+        m.trains = trainLiveStateStore.all().size();
         // Placeholder for event rate and stream status (to be filled when wiring ingestion)
         m.streamConnected = true;
         m.currentEventRate = 0.0;

@@ -23,7 +23,6 @@ public class NormalizationService {
 
     private final Map<UUID, Last> lastByTrain = new ConcurrentHashMap<>();
 
-    // EMA alpha for smoothing noisy signals
     private static final float ALPHA = 0.3f;
 
     public NormalizedTelemetry normalize(TelemetryRawRequest r) {
@@ -31,21 +30,22 @@ public class NormalizationService {
 
         boolean dedup = r.getSeq() != null && r.getSeq().equals(last.seq);
         boolean delayed = r.getTs() != null && r.getTs().isBefore(last.ts);
-        boolean stale = false; // can be set by external policy (e.g., no update for > N sec)
+        boolean stale = false;
 
         Float speed = clamp(r.getSpeedKph(), 0f, 400f);
-        Float brake = clamp(r.getBrakePressureKpa(), 0f, 1000f);
-        Float motorTemp = clamp(r.getMotorTempC(), -50f, 200f);
-        Float voltage = clamp(r.getVoltageV(), 0f, 1000f);
+        Float brakePipe = clamp(r.getBrakePipePressureKpa(), 0f, 1200f);
+        Float engineTemp = clamp(r.getEngineTempC(), -50f, 200f);
+        Float batteryVoltage = clamp(r.getBatteryVoltageV(), 0f, 100f);
+        Float tractionVoltage = clamp(r.getTractionVoltageV(), 0f, 1500f);
         Float current = clamp(r.getCurrentA(), -5000f, 5000f);
         Float heading = clamp(r.getHeadingDeg(), 0f, 360f);
         Float fuel = clamp(r.getFuelLevelPct(), 0f, 100f);
-        Float energy = clamp(r.getEnergyLevelPct(), 0f, 100f);
+        Float oilTemp = clamp(r.getOilTempC(), -50f, 200f);
+        Float engineRpm = clamp(r.getEngineRpm(), 0f, 1200f);
 
         Float speedEma = ema(last.speedEma, speed);
-        Float brakeEma = ema(last.brakeEma, brake);
+        Float brakeEma = ema(last.brakeEma, brakePipe);
 
-        // Update last only for non-delayed and non-dedup packets
         if (!delayed && !dedup) {
             last.seq = r.getSeq() == null ? last.seq : r.getSeq();
             last.ts = r.getTs() == null ? last.ts : r.getTs();
@@ -57,29 +57,50 @@ public class NormalizationService {
                 .ts(r.getTs())
                 .locomotiveId(r.getLocomotiveId())
                 .seq(r.getSeq())
+                .serialNumber(r.getSerialNumber())
+                .trainId(r.getTrainId())
+                .lineId(r.getLineId())
+                .lineName(r.getLineName())
+                .trainRunId(r.getTrainRunId())
+                .routeId(r.getRouteId())
+                .geofenceId(r.getGeofenceId())
+                .activeGeofences(r.getActiveGeofences())
                 .lat(r.getLat())
                 .lon(r.getLon())
                 .altM(r.getAltM())
                 .speedKph(speed)
                 .headingDeg(heading)
-                .voltageV(voltage)
+                .brakePipePressureKpa(brakePipe)
+                .mainReservoirPressureKpa(r.getMainReservoirPressureKpa())
+                .brakeCylinderPressureKpa(r.getBrakeCylinderPressureKpa())
+                .brakePipeLeakKpaPerMin(r.getBrakePipeLeakKpaPerMin())
+                .brakeStatus(r.getBrakeStatus())
+                .batteryVoltageV(batteryVoltage)
+                .tractionVoltageV(tractionVoltage)
                 .currentA(current)
-                .motorTempC(motorTemp)
-                .brakePressureKpa(brake)
+                .engineRpm(engineRpm)
+                .engineTempC(engineTemp)
+                .oilTempC(oilTemp)
                 .fuelLevelPct(fuel)
-                .energyLevelPct(energy)
-                .doorsState(r.getDoorsState())
-                .alarmStatus(r.getAlarmStatus())
+                .fuelConsumptionRateLph(r.getFuelConsumptionRateLph())
+                .tractiveEffortKn(r.getTractiveEffortKn())
+                .dynamicBrakeForceKn(r.getDynamicBrakeForceKn())
+                .alerterTimerSec(r.getAlerterTimerSec())
+                .pcsOpen(r.getPcsOpen())
+                .eabStatus(r.getEabStatus())
                 .commState(r.getCommState())
-                .routeId(r.getRouteId())
-                .geofenceId(r.getGeofenceId())
+                .alarmStatus(r.getAlarmStatus())
                 .faultCodes(r.getFaultCodes())
+                .healthIndex(r.getHealthIndex())
                 .driverState(r.getDriverState())
+                .weatherFactor(r.getWeatherFactor())
+                .trackGradePct(r.getTrackGradePct())
+                .currentMode(r.getCurrentMode())
                 .deduplicated(dedup)
                 .stale(stale)
                 .delayed(delayed)
                 .speedKphEma(speedEma)
-                .brakePressureKpaEma(brakeEma)
+                .brakePipePressureKpaEma(brakeEma)
                 .build();
     }
 

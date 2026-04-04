@@ -28,29 +28,47 @@ public class TelemetryIngestPushAspect {
 
         Instant ts = request.getTs() != null ? request.getTs() : Instant.now();
 
-        // Push current train state snapshot to WS
         TrainStateWsMessage stateMsg = TrainStateWsMessage.builder()
                 .locomotiveId(request.getLocomotiveId())
                 .seq(request.getSeq())
                 .ts(ts)
+                .serialNumber(request.getSerialNumber())
+                .trainId(request.getTrainId())
+                .lineId(request.getLineId())
+                .lineName(request.getLineName())
                 .lat(request.getLat())
                 .lon(request.getLon())
+                .altM(request.getAltM())
                 .speedKph(request.getSpeedKph())
                 .headingDeg(request.getHeadingDeg())
-                .motorTempC(request.getMotorTempC())
-                .brakePressureKpa(request.getBrakePressureKpa())
+                .brakePipePressureKpa(request.getBrakePipePressureKpa())
+                .mainReservoirPressureKpa(request.getMainReservoirPressureKpa())
+                .brakeCylinderPressureKpa(request.getBrakeCylinderPressureKpa())
+                .brakePipeLeakKpaPerMin(request.getBrakePipeLeakKpaPerMin())
+                .brakeStatus(request.getBrakeStatus())
+                .batteryVoltageV(request.getBatteryVoltageV())
+                .tractionVoltageV(request.getTractionVoltageV())
+                .currentA(request.getCurrentA())
+                .engineRpm(request.getEngineRpm())
+                .engineTempC(request.getEngineTempC())
+                .oilTempC(request.getOilTempC())
                 .fuelLevelPct(request.getFuelLevelPct())
-                .energyLevelPct(request.getEnergyLevelPct())
-                .healthIndex(null) // will be set when health engine is integrated
+                .fuelConsumptionRateLph(request.getFuelConsumptionRateLph())
+                .tractiveEffortKn(request.getTractiveEffortKn())
+                .dynamicBrakeForceKn(request.getDynamicBrakeForceKn())
+                .alerterTimerSec(request.getAlerterTimerSec())
+                .pcsOpen(request.getPcsOpen())
+                .eabStatus(request.getEabStatus())
+                .commState(request.getCommState())
+                .alarmStatus(request.getAlarmStatus())
+                .healthIndex(request.getHealthIndex())
                 .healthStatus(null)
-                .commState(request.getCommState() == null ? null : request.getCommState().name())
-                .alarmStatus(request.getAlarmStatus() == null ? null : request.getAlarmStatus().name())
                 .faultCodes(request.getFaultCodes())
+                .currentMode(request.getCurrentMode())
                 .build();
 
         publisher.publishTrainState(request.getLocomotiveId(), stateMsg);
 
-        // Example metric point (speed) for charts
         if (request.getSpeedKph() != null) {
             TelemetryPointWsMessage point = TelemetryPointWsMessage.builder()
                     .locomotiveId(request.getLocomotiveId())

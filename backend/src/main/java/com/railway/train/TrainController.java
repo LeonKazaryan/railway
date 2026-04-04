@@ -3,8 +3,6 @@ package com.railway.train;
 import com.railway.alert.model.Alert;
 import com.railway.history.InMemoryHistoryStore;
 import com.railway.history.model.TelemetryRecord;
-import com.railway.state.LiveStateAggregatorService;
-import com.railway.state.model.TrainState;
 import com.railway.util.DurationParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,13 +19,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TrainController {
 
-    private final LiveStateAggregatorService aggregator;
     private final InMemoryHistoryStore history;
-
-    @GetMapping("/{id}/current")
-    public TrainState current(@PathVariable("id") UUID id) {
-        return aggregator.current(id);
-    }
 
     @GetMapping("/{id}/history")
     public List<TelemetryRecord> history(

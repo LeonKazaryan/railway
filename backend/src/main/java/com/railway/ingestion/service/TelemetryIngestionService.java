@@ -24,7 +24,7 @@ public class TelemetryIngestionService {
     private final TrainUpdatesPublisher trainUpdatesPublisher;
 
     public IngestionAckResponse ingest(TelemetryRawRequest request) {
-        Integer healthIndex = null;
+        Integer healthIndex = request.getHealthIndex();
         String healthStatus = null;
 
         boolean inserted = telemetryRawPersistencePort.insert(request, healthIndex);
@@ -44,13 +44,13 @@ public class TelemetryIngestionService {
                 trainUpdatesPublisher.publishTelemetryPoint(request.getLocomotiveId(), speedPoint);
             }
 
-            if (request.getMotorTempC() != null) {
-                TelemetryPointWsMessage motorTempPoint = trainWsMapper.toTelemetryPoint(
+            if (request.getEngineTempC() != null) {
+                TelemetryPointWsMessage engineTempPoint = trainWsMapper.toTelemetryPoint(
                         liveState,
-                        "motorTempC",
-                        request.getMotorTempC().doubleValue()
+                        "engineTempC",
+                        request.getEngineTempC().doubleValue()
                 );
-                trainUpdatesPublisher.publishTelemetryPoint(request.getLocomotiveId(), motorTempPoint);
+                trainUpdatesPublisher.publishTelemetryPoint(request.getLocomotiveId(), engineTempPoint);
             }
         }
 

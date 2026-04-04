@@ -20,6 +20,7 @@ public class SpringTrainUpdatesPublisher implements TrainUpdatesPublisher {
     @Override
     public void publishTrainState(UUID trainId, TrainStateWsMessage message) {
         messagingTemplate.convertAndSend(WsTopics.trainState(trainId), message);
+        messagingTemplate.convertAndSend(WsTopics.FLEET_STATE, message);
     }
 
     @Override
