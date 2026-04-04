@@ -1,5 +1,4 @@
-import { useTranslation } from "react-i18next";
-import { MOCK_TOP_RISK_TRAINS } from "@/entities/train/model/mock";
+import { useTopRiskTrains } from "@/features/fleet-live/model/store";
 import { cn } from "@/shared/lib/cn";
 
 const SCORE_COLOR = (score: number) => {
@@ -9,11 +8,19 @@ const SCORE_COLOR = (score: number) => {
 };
 
 export function TopRiskTrains() {
-  const { t } = useTranslation();
+  const items = useTopRiskTrains();
+
+  if (items.length === 0) {
+    return (
+      <div className="px-2 py-3 text-center text-[10px]" style={{ color: "var(--text-muted)" }}>
+        —
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-1">
-      {MOCK_TOP_RISK_TRAINS.map((item, idx) => (
+      {items.map((item, idx) => (
         <div
           key={item.id}
           className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-[var(--bg-panel)] transition-colors"
@@ -39,7 +46,7 @@ export function TopRiskTrains() {
               className="text-[10px] truncate"
               style={{ color: "var(--text-muted)" }}
             >
-              {t(`fleetOverview.risk.${item.issueKey}`)}
+              {item.issue}
             </div>
           </div>
           <div

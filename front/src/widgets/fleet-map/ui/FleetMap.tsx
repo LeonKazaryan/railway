@@ -6,11 +6,12 @@ import {
   MAP_STYLE_DARK,
   MAP_STYLE_LIGHT,
 } from "@/shared/config/map.config";
-import { MOCK_TRAINS } from "@/entities/train/model/mock";
+import { useFleetTrains } from "@/features/fleet-live/model/store";
 import { useTrainSelectionStore } from "@/features/train-selection/model/store";
 import { useLocaleStore } from "@/features/locale/model/store";
 import { useThemeStore } from "@/features/theme/model/store";
 import type { AppTheme } from "@/features/theme/model/store";
+import type { Train } from "@/entities/train/model/types";
 import { KZ_RAIL_ROUTES } from "../config/routes";
 import { createTrainMarkerElement } from "./TrainMarker";
 
@@ -62,6 +63,7 @@ function addRouteLayers(map: maplibregl.Map) {
 export function FleetMap() {
   const locale = useLocaleStore((s) => s.locale);
   const theme = useThemeStore((s) => s.theme);
+  const liveTrains = useFleetTrains();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
@@ -101,20 +103,6 @@ export function FleetMap() {
       } else {
         addRouteLayers(map);
       }
-      MOCK_TRAINS.forEach((train) => {
-        const el = createTrainMarkerElement(
-          train,
-          false,
-          themeNow,
-        );
-        el.addEventListener("click", () => {
-          setSelectedTrain(train.id);
-        });
-        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-          .setLngLat([train.position.lng, train.position.lat])
-          .addTo(map);
-        markersRef.current.set(train.id, marker);
-      });
       setMapLoaded(true);
     });
 
@@ -140,9 +128,20 @@ export function FleetMap() {
   }, [theme, mapLoaded]);
 
   useEffect(() => {
-    MOCK_TRAINS.forEach((train) => {
-      const marker = markersRef.current.get(train.id);
-      if (!marker) return;
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+
+    const currentIds = new Set(liveTrains.map((t) => t.id));
+
+    markersRef.current.forEach((marker, id) => {
+      if (!currentIds.has(id)) {
+        marker.remove();
+        markersRef.current.delete(id);
+      }
+    });
+
+    liveTrains.forEach((train: Train) => {
+      const existing = markersRef.current.get(train.id);
 
       const el = createTrainMarkerElement(
         train,
@@ -150,21 +149,26 @@ export function FleetMap() {
         theme,
       );
       el.addEventListener("click", () => setSelectedTrain(train.id));
-      marker.getElement().replaceWith(el);
 
-      const newMarker = new maplibregl.Marker({
-        element: el,
-        anchor: "center",
-      }).setLngLat([train.position.lng, train.position.lat]);
-
-      if (mapRef.current) {
-        newMarker.addTo(mapRef.current);
+      if (existing) {
+        existing.setLngLat([train.position.lng, train.position.lat]);
+        existing.getElement().replaceWith(el);
+        const fresh = new maplibregl.Marker({
+          element: el,
+          anchor: "center",
+        })
+          .setLngLat([train.position.lng, train.position.lat])
+          .addTo(map);
+        markersRef.current.set(train.id, fresh);
+        existing.remove();
+      } else {
+        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+          .setLngLat([train.position.lng, train.position.lat])
+          .addTo(map);
+        markersRef.current.set(train.id, marker);
       }
-
-      markersRef.current.set(train.id, newMarker);
-      marker.remove();
     });
-  }, [selectedTrainId, setSelectedTrain, locale, theme]);
+  }, [liveTrains, selectedTrainId, setSelectedTrain, locale, theme, mapLoaded]);
 
   return (
     <div

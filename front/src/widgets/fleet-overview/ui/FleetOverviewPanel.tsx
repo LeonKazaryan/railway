@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { TrendingUp, ChevronRight, Activity } from "lucide-react";
-import { MOCK_FLEET_STATS } from "@/entities/train/model/mock";
+import { useFleetStats } from "@/features/fleet-live/model/store";
 import { FleetHealthGauge } from "./FleetHealthGauge";
 import { LiveSparkline } from "./LiveSparkline";
 import { TopRiskTrains } from "./TopRiskTrains";
@@ -25,21 +25,22 @@ function SectionHeader({ title }: { title: string }) {
 
 export function FleetOverviewPanel() {
   const { t } = useTranslation();
+  const stats = useFleetStats();
 
   const statusRows = [
     {
       labelKey: "fleetOverview.statusNormal" as const,
-      value: MOCK_FLEET_STATS.normalCount,
+      value: stats.normalCount,
       color: "var(--success)",
     },
     {
       labelKey: "fleetOverview.statusWarning" as const,
-      value: MOCK_FLEET_STATS.warningCount,
+      value: stats.warningCount,
       color: "var(--warning)",
     },
     {
       labelKey: "fleetOverview.statusCritical" as const,
-      value: MOCK_FLEET_STATS.criticalCount,
+      value: stats.criticalCount,
       color: "var(--danger)",
     },
   ];
@@ -74,7 +75,7 @@ export function FleetOverviewPanel() {
               className="text-3xl font-bold font-mono leading-none"
               style={{ color: "var(--text-primary)" }}
             >
-              {MOCK_FLEET_STATS.activeTrains}
+              {stats.activeTrains}
             </div>
             <div className="flex items-center gap-1 mt-1">
               <TrendingUp size={10} style={{ color: "var(--success)" }} />
@@ -82,9 +83,7 @@ export function FleetOverviewPanel() {
                 className="text-[10px]"
                 style={{ color: "var(--text-muted)" }}
               >
-                {t("fleetOverview.deltaFromHour", {
-                  count: MOCK_FLEET_STATS.activeDelta,
-                })}
+                {t("fleetOverview.live")}
               </span>
             </div>
           </div>
@@ -95,7 +94,7 @@ export function FleetOverviewPanel() {
             >
               {t("fleetOverview.fleetHealth")}
             </div>
-            <FleetHealthGauge score={MOCK_FLEET_STATS.healthScore} />
+            <FleetHealthGauge score={stats.healthScore} />
           </div>
         </div>
 
@@ -140,7 +139,7 @@ export function FleetOverviewPanel() {
             className="text-sm font-bold font-mono"
             style={{ color: "var(--text-primary)" }}
           >
-            {MOCK_FLEET_STATS.liveStreamValue.toLocaleString()}
+            {stats.liveStreamValue.toLocaleString()}
           </span>
         </div>
         <LiveSparkline />

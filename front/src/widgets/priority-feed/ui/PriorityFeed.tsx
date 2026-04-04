@@ -1,12 +1,53 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SlidersHorizontal, ChevronRight } from "lucide-react";
-import { MOCK_ALERTS } from "@/entities/alert/model/mock";
+import { useFleetLiveStore } from "@/features/fleet-live/model/store";
+import type { Alert, AlertSeverity } from "@/entities/alert/model/types";
 import { AlertCard } from "./AlertCard";
+
+function deriveAlerts(
+  trains: Map<string, { locomotiveId: string; trainId: string | null; ts: string; healthIndex: number | null; faultCodes: string[] | null; commState: string | null; alarmStatus: string | null }>,
+): Alert[] {
+  const alerts: Alert[] = [];
+  let idx = 0;
+
+  for (const [, ws] of trains) {
+    const h = ws.healthIndex ?? 100;
+    const id = ws.trainId ?? ws.locomotiveId;
+    const faults = ws.faultCodes ?? [];
+
+    let severity: AlertSeverity = "info";
+    if (ws.commState === "offline" || ws.commState === null) severity = "warning";
+    else if (h < 50 || ws.alarmStatus === "critical") severity = "critical";
+    else if (h < 75 || faults.length > 0 || ws.alarmStatus === "warning") severity = "warning";
+    else continue;
+
+    const minutesAgo = Math.max(0, Math.round((Date.now() - new Date(ws.ts).getTime()) / 60000));
+
+    alerts.push({
+      id: `live-${idx++}`,
+      trainId: id,
+      severity,
+      messageKey: faults[0] ?? severity,
+      minutesAgo,
+      time: new Date(ws.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      isNew: minutesAgo < 2,
+    });
+  }
+
+  alerts.sort((a, b) => {
+    const rank: Record<AlertSeverity, number> = { critical: 0, warning: 1, info: 2 };
+    return rank[a.severity] - rank[b.severity];
+  });
+
+  return alerts;
+}
 
 export function PriorityFeed() {
   const { t } = useTranslation();
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
+  const trains = useFleetLiveStore((s) => s.trains);
+  const alerts = useMemo(() => deriveAlerts(trains), [trains]);
 
   return (
     <div className="flex flex-col h-full">
@@ -43,18 +84,26 @@ export function PriorityFeed() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col gap-1 p-2">
-          {MOCK_ALERTS.map((alert) => (
-            <AlertCard
-              key={alert.id}
-              alert={alert}
-              isSelected={selectedAlertId === alert.id}
-              onSelect={(id) =>
-                setSelectedAlertId(id === selectedAlertId ? null : id)
-              }
-            />
-          ))}
-        </div>
+        {alerts.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+              {t("priorityFeed.noAlerts", "No active alerts")}
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1 p-2">
+            {alerts.map((alert) => (
+              <AlertCard
+                key={alert.id}
+                alert={alert}
+                isSelected={selectedAlertId === alert.id}
+                onSelect={(id) =>
+                  setSelectedAlertId(id === selectedAlertId ? null : id)
+                }
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div

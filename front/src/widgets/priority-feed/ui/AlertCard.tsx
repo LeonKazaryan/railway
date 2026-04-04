@@ -1,7 +1,12 @@
 import { ExternalLink, AlertTriangle, Info, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Alert } from "@/entities/alert/model/types";
-import { ALERT_SEVERITY_STYLE } from "@/entities/alert/model/mock";
+
+const ALERT_SEVERITY_STYLE = {
+  critical: { color: "#f43f5e", bgColor: "rgba(244,63,94,0.12)" },
+  warning: { color: "#f59e0b", bgColor: "rgba(245,158,11,0.10)" },
+  info: { color: "#38bdf8", bgColor: "rgba(56,189,248,0.08)" },
+} as const;
 import { cn } from "@/shared/lib/cn";
 
 const SEVERITY_ICONS = {
