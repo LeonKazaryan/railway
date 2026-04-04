@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Bell, Settings, Filter } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
+import logoUrl from '../../../../assets/logo.png'
 
 const NAV_TABS = [
   { id: 'fleet', label: 'FLEET VIEW' },
@@ -35,18 +36,14 @@ export function TopBar() {
       }}
     >
       <div className="flex items-center gap-2 min-w-[140px]">
-        <div
-          className="w-6 h-6 rounded flex items-center justify-center"
-          style={{ backgroundColor: 'var(--accent-primary)' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="1" y="4" width="12" height="6" rx="1.5" stroke="white" strokeWidth="1.2" />
-            <rect x="3" y="7" width="2" height="3" rx="0.5" fill="white" />
-            <rect x="9" y="7" width="2" height="3" rx="0.5" fill="white" />
-            <circle cx="4" cy="10.5" r="1" fill="white" />
-            <circle cx="10" cy="10.5" r="1" fill="white" />
-          </svg>
-        </div>
+        <img
+          src={logoUrl}
+          alt=""
+          width={28}
+          height={28}
+          className="h-7 w-7 shrink-0 rounded-full object-cover"
+          decoding="async"
+        />
         <span
           className="text-sm font-bold tracking-widest uppercase"
           style={{ color: 'var(--text-primary)' }}
