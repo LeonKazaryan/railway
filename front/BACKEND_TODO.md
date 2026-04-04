@@ -102,6 +102,55 @@ This file tracks all places where mock/static data must be replaced with real AP
 
 ---
 
+---
+
+## 13. Train Twin — Current State Snapshot
+
+**Screen:** Twin detail page
+**Replace with:** `GET /api/trains/:id/state` — returns full `LOCOMOTIVE_STATE_CURRENT` row: lat, lon, speed_kph, heading_deg, engine_temp_c, oil_temp_c, fuel_level_pct, health_index, active_faults, comm_state, alarm_status, etc.
+**Hook location:** `src/entities/train/hooks/useTrainCurrentState.ts` (TanStack Query, refresh every 5s)
+**Current mock:** `MOCK_TELEMETRY[trainId]` in `src/entities/train/model/mock.ts`
+
+---
+
+## 14. Train Twin — Live Telemetry WebSocket
+
+**Screen:** Twin detail page — all live-updating metrics, system cards, charts
+**Replace with:** `WS /ws/trains/:id/telemetry` — streams `TELEMETRY_RAW` rows at 1Hz per train
+**Location:** Replace `useLiveTelemetry` simulation (`src/entities/train/hooks/useLiveTelemetry.ts`) with a real WebSocket consumer
+**Pattern:**
+- Connect on mount, disconnect on unmount
+- Parse incoming JSON into `TelemetrySnapshot`
+- Push into rolling history buffer (same `useRef` pattern, keep circular buffer logic)
+**Helper to create:** `src/shared/lib/ws.ts` — WebSocket wrapper with auto-reconnect
+
+---
+
+## 15. Train Twin — Static Train Detail
+
+**Screen:** Twin sidebar (serial number, operator, route, mode, start time)
+**Replace with:** `GET /api/trains/:id` — returns `LOCOMOTIVE` + active `TRAIN_RUN` merged
+**Hook location:** `src/entities/train/hooks/useTrainDetail.ts`
+**Current mock:** `MOCK_TRAIN_DETAIL` in `src/entities/train/model/mock.ts`
+
+---
+
+## 16. Train Twin — Event Log
+
+**Screen:** EVENTS tab (not yet implemented in UI)
+**Replace with:** `GET /api/trains/:id/events?limit=50` — returns `EVENT_LOG` rows ordered by ts desc
+**Hook location:** `src/entities/train/hooks/useTrainEvents.ts`
+
+---
+
+## 17. Fault Code Labels
+
+**Location:** `src/entities/train/model/mock.ts` → `FAULT_CODE_LABELS`
+**Replace with:** `GET /api/alert-rules` — returns `ALERT_RULE` table with metric_code, title, description, action_hint
+**Map:** `code → { title, description, action_hint }` and use in `TwinAlertBanner`
+
+---
+
 ## Notes
 
 - All API calls should go through `src/shared/api/client.ts` — the base HTTP client is already stubbed
