@@ -4,4 +4,4 @@ export const MAP_CONFIG = {
   minZoom: 4,
   maxZoom: 14,
   style: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${import.meta.env.VITE_MAPTILER_KEY}`,
-} as const
+} as const;

@@ -1,9 +1,9 @@
-import { AppShell } from '@/widgets/app-shell/ui/AppShell'
-import { FleetOverviewPanel } from '@/widgets/fleet-overview/ui/FleetOverviewPanel'
-import { FleetMap } from '@/widgets/fleet-map/ui/FleetMap'
-import { PriorityFeed } from '@/widgets/priority-feed/ui/PriorityFeed'
-import { NetworkStatusOverlay } from '@/widgets/fleet-map/ui/NetworkStatusOverlay'
-import { WeatherOverlay } from '@/widgets/fleet-map/ui/WeatherOverlay'
+import { AppShell } from "@/widgets/app-shell/ui/AppShell";
+import { FleetOverviewPanel } from "@/widgets/fleet-overview/ui/FleetOverviewPanel";
+import { FleetMap } from "@/widgets/fleet-map/ui/FleetMap";
+import { PriorityFeed } from "@/widgets/priority-feed/ui/PriorityFeed";
+import { NetworkStatusOverlay } from "@/widgets/fleet-map/ui/NetworkStatusOverlay";
+import { WeatherOverlay } from "@/widgets/fleet-map/ui/WeatherOverlay";
 
 function MapWithOverlays() {
   return (
@@ -18,7 +18,7 @@ function MapWithOverlays() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function FleetPage() {
@@ -28,5 +28,5 @@ export function FleetPage() {
       main={<MapWithOverlays />}
       rightPanel={<PriorityFeed />}
     />
-  )
+  );
 }

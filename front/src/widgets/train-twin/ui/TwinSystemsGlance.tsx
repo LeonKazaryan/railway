@@ -1,27 +1,32 @@
-import type { TelemetrySnapshot, TrainModel } from '@/entities/train/model/types'
-import { SYSTEM_ZONE_CONFIG } from '@/entities/train/model/config'
-import { SystemCard } from './SystemCard'
-import { TrainImageView } from './TrainImageView'
+import { useTranslation } from "react-i18next";
+import type {
+  TelemetrySnapshot,
+  TrainModel,
+} from "@/entities/train/model/types";
+import { SYSTEM_ZONE_CONFIG } from "@/entities/train/model/config";
+import { SystemCard } from "./SystemCard";
+import { TrainImageView } from "./TrainImageView";
 
-const LEFT_ZONES = ['engine', 'electrical']
-const RIGHT_ZONES = ['brakes', 'air']
-const BOTTOM_ZONES = ['traction', 'bogies']
+const LEFT_ZONES = ["engine", "electrical"];
+const RIGHT_ZONES = ["brakes", "air"];
+const BOTTOM_ZONES = ["traction", "bogies"];
 
 interface TwinSystemsGlanceProps {
-  snapshot: TelemetrySnapshot
-  model: TrainModel
+  snapshot: TelemetrySnapshot;
+  model: TrainModel;
 }
 
 export function TwinSystemsGlance({ snapshot, model }: TwinSystemsGlanceProps) {
-  const zoneMap = Object.fromEntries(SYSTEM_ZONE_CONFIG.map((z) => [z.id, z]))
+  const { t } = useTranslation();
+  const zoneMap = Object.fromEntries(SYSTEM_ZONE_CONFIG.map((z) => [z.id, z]));
 
   return (
     <div className="flex flex-col gap-3">
       <span
         className="text-[9px] font-bold tracking-widest uppercase"
-        style={{ color: 'var(--text-muted)' }}
+        style={{ color: "var(--text-muted)" }}
       >
-        Systems at a Glance
+        {t("twin.systemsGlance")}
       </span>
 
       <div className="flex items-stretch gap-3">
@@ -47,5 +52,5 @@ export function TwinSystemsGlance({ snapshot, model }: TwinSystemsGlanceProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

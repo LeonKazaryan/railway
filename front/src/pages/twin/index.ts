@@ -1,1 +1,1 @@
-export { TwinPage } from './ui/TwinPage'
+export { TwinPage } from "./ui/TwinPage";
