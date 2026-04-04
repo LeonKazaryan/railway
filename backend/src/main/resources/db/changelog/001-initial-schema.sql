@@ -119,3 +119,4 @@ CREATE TABLE IF NOT EXISTS proximity_event (
     rel_bearing_deg     REAL,
     severity            TEXT
 );
+

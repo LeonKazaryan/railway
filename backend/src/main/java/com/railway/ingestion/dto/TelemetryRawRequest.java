@@ -77,4 +77,5 @@ public class TelemetryRawRequest {
     private List<String> faultCodes = new ArrayList<>();
 
     private Map<String, Object> driverState = new HashMap<>();
+    private UUID trainRunId;
 }
