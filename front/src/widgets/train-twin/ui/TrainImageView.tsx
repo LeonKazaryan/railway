@@ -1,38 +1,39 @@
+import { forwardRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TrainModel } from "@/entities/train/model/types";
 import { TRAIN_MODEL_ASSETS } from "@/entities/train/model/config";
 
 interface TrainImageViewProps {
   model: TrainModel;
+  className?: string;
+  children?: ReactNode;
 }
 
-export function TrainImageView({ model }: TrainImageViewProps) {
-  const { t } = useTranslation();
-  const { image } = TRAIN_MODEL_ASSETS[model];
-  const alt = t(`trainModels.${model}`);
+export const TrainImageView = forwardRef<HTMLDivElement, TrainImageViewProps>(
+  function TrainImageView({ model, className = "", children }, ref) {
+    const { t } = useTranslation();
+    const { image } = TRAIN_MODEL_ASSETS[model];
+    const alt = t(`trainModels.${model}`);
 
-  return (
-    <div className="relative flex items-center justify-center flex-1 min-w-0 py-2">
+    return (
       <div
-        className="absolute inset-0 rounded-2xl"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% 60%, rgba(56,189,248,0.06) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <img
-        src={image}
-        alt={alt}
-        className="relative z-10 object-contain w-full"
-        style={{
-          maxHeight: 180,
-          filter:
-            "drop-shadow(0 0 24px rgba(56,189,248,0.25)) drop-shadow(0 4px 16px rgba(0,0,0,0.6))",
-        }}
-        draggable={false}
-      />
-    </div>
-  );
-}
+        ref={ref}
+        className={`relative flex-1 min-h-[210px] rounded-xl overflow-visible ${className}`}
+      >
+        <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
+          <img
+            src={image}
+            alt={alt}
+            draggable={false}
+            className="absolute inset-0 w-full h-full"
+            style={{
+              objectFit: "cover",
+              objectPosition: "center 48%",
+            }}
+          />
+        </div>
+        {children}
+      </div>
+    );
+  },
+);
