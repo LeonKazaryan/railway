@@ -2,6 +2,7 @@ import { useRef, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import ReactECharts from "echarts-for-react";
 import type { ECharts } from "echarts";
+import { useThemeStore } from "@/features/theme/model/store";
 
 interface TwinHealthGaugeProps {
   score: number;
@@ -9,6 +10,7 @@ interface TwinHealthGaugeProps {
 
 export function TwinHealthGauge({ score }: TwinHealthGaugeProps) {
   const { t, i18n } = useTranslation();
+  const theme = useThemeStore((s) => s.theme);
   const echartsRef = useRef<ECharts | null>(null);
 
   const option = useMemo(() => {
@@ -21,6 +23,11 @@ export function TwinHealthGauge({ score }: TwinHealthGaugeProps) {
       color = "#f59e0b";
       label = t("twin.health.attention");
     }
+    const detailColor = theme === "light" ? "#0f172a" : "#e8edf5";
+    const trackRest =
+      theme === "light" ? "rgba(15,23,42,0.12)" : "rgba(255,255,255,0.06)";
+    const innerRing =
+      theme === "light" ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.05)";
     return {
       backgroundColor: "transparent",
       series: [
@@ -37,7 +44,7 @@ export function TwinHealthGauge({ score }: TwinHealthGaugeProps) {
               width: 10,
               color: [
                 [score / 100, color],
-                [1, "rgba(255,255,255,0.06)"],
+                [1, trackRest],
               ],
             },
           },
@@ -48,7 +55,7 @@ export function TwinHealthGauge({ score }: TwinHealthGaugeProps) {
           detail: {
             valueAnimation: true,
             formatter: "{value}",
-            color: "#e8edf5",
+            color: detailColor,
             fontSize: 36,
             fontWeight: 700,
             fontFamily: "JetBrains Mono, monospace",
@@ -74,7 +81,7 @@ export function TwinHealthGauge({ score }: TwinHealthGaugeProps) {
           axisLine: {
             lineStyle: {
               width: 1,
-              color: [[1, "rgba(255,255,255,0.05)"]],
+              color: [[1, innerRing]],
             },
           },
           pointer: { show: false },
@@ -86,7 +93,7 @@ export function TwinHealthGauge({ score }: TwinHealthGaugeProps) {
         },
       ],
     };
-  }, [score, t, i18n.language]);
+  }, [score, t, i18n.language, theme]);
 
   useEffect(() => {
     if (echartsRef.current) {

@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, memo } from "react";
+import { useState, useRef, useEffect, memo, useMemo } from "react";
 import type { ECharts } from "echarts";
 import { useTranslation } from "react-i18next";
 import ReactECharts from "echarts-for-react";
 import type { TelemetrySnapshot } from "@/entities/train/model/types";
 import { TELEMETRY_CHART_CONFIG } from "@/entities/train/model/config";
+import { useThemeStore } from "@/features/theme/model/store";
 import { cn } from "@/shared/lib/cn";
 
 const TIME_RANGE_IDS = ["m5", "m15", "h1", "h4"] as const;
@@ -34,58 +35,63 @@ const MiniChart = memo(function MiniChart({
   chartId,
 }: MiniChartProps) {
   const echartsRef = useRef<ECharts | null>(null);
+  const theme = useThemeStore((s) => s.theme);
 
-  const option = {
-    backgroundColor: "transparent",
-    grid: { top: 4, bottom: 16, left: 4, right: 4 },
-    xAxis: {
-      type: "time",
-      show: true,
-      axisLabel: {
-        color: "rgba(255,255,255,0.3)",
-        fontSize: 8,
-        formatter: (val: number) => {
-          const d = new Date(val);
-          return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
-        },
-      },
-      axisLine: { show: false },
-      splitLine: { show: false },
-      axisTick: { show: false },
-    },
-    yAxis: {
-      type: "value",
-      show: false,
-    },
-    series: [
-      {
-        type: "line",
-        data,
-        smooth: true,
-        symbol: "none",
-        lineStyle: { color, width: 1.5 },
-        areaStyle: {
-          color: {
-            type: "linear",
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0, color: `${color}30` },
-              { offset: 1, color: `${color}00` },
-            ],
+  const option = useMemo(() => {
+    const axisMuted =
+      theme === "light" ? "rgba(15,23,42,0.42)" : "rgba(255,255,255,0.3)";
+    return {
+      backgroundColor: "transparent",
+      grid: { top: 4, bottom: 16, left: 4, right: 4 },
+      xAxis: {
+        type: "time",
+        show: true,
+        axisLabel: {
+          color: axisMuted,
+          fontSize: 8,
+          formatter: (val: number) => {
+            const d = new Date(val);
+            return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
           },
         },
+        axisLine: { show: false },
+        splitLine: { show: false },
+        axisTick: { show: false },
       },
-    ],
-  };
+      yAxis: {
+        type: "value",
+        show: false,
+      },
+      series: [
+        {
+          type: "line",
+          data,
+          smooth: true,
+          symbol: "none",
+          lineStyle: { color, width: 1.5 },
+          areaStyle: {
+            color: {
+              type: "linear",
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: `${color}30` },
+                { offset: 1, color: `${color}00` },
+              ],
+            },
+          },
+        },
+      ],
+    };
+  }, [data, color, theme]);
 
   useEffect(() => {
     if (echartsRef.current && data.length > 0) {
-      echartsRef.current.setOption({ series: [{ data }] });
+      echartsRef.current.setOption(option);
     }
-  }, [data]);
+  }, [data, option]);
 
   return (
     <div
@@ -93,6 +99,7 @@ const MiniChart = memo(function MiniChart({
       style={{
         backgroundColor: "var(--bg-panel)",
         borderColor: "var(--border-subtle)",
+        boxShadow: "var(--card-shadow)",
       }}
     >
       <div className="flex items-center justify-between mb-1 px-1">
@@ -157,9 +164,14 @@ export function TwinTelemetryTimeline({ history }: TwinTelemetryTimelineProps) {
               className={cn(
                 "text-[9px] font-semibold px-2 py-0.5 rounded transition-all",
                 range === id
-                  ? "text-[var(--accent-primary)] bg-[rgba(56,189,248,0.14)]"
+                  ? "text-[var(--accent-primary)]"
                   : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
               )}
+              style={
+                range === id
+                  ? { backgroundColor: "var(--accent-soft)" }
+                  : undefined
+              }
             >
               {t(`twin.timeline.${id}`)}
             </button>

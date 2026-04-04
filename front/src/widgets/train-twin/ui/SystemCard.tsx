@@ -37,7 +37,10 @@ export function SystemCard({ zone, snapshot }: SystemCardProps) {
         backgroundColor: "var(--bg-panel)",
         borderColor:
           status === "normal" ? "var(--border-subtle)" : `${color}30`,
-        boxShadow: status !== "normal" ? `0 0 12px ${color}12` : undefined,
+        boxShadow:
+          status === "normal"
+            ? "var(--card-shadow)"
+            : `0 0 12px ${color}12, var(--card-shadow)`,
         minWidth: 120,
       }}
     >

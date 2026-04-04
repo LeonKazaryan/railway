@@ -71,6 +71,7 @@ export function TwinMetricsBar({ snapshot, train }: TwinMetricsBarProps) {
       style={{
         backgroundColor: "var(--bg-panel)",
         borderColor: "var(--border-subtle)",
+        boxShadow: "var(--card-shadow)",
       }}
     >
       <MetricTile

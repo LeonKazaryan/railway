@@ -1,14 +1,17 @@
 import type { Train } from "@/entities/train/model/types";
 import { TRAIN_STATUS_CONFIG } from "@/entities/train/model/config";
 import { i18n } from "@/shared/config/i18n/instance";
+import type { AppTheme } from "@/features/theme/model/store";
 
 export function createTrainMarkerElement(
   train: Train,
   isSelected: boolean,
+  mapTheme: AppTheme = "dark",
 ): HTMLElement {
   const config = TRAIN_STATUS_CONFIG[train.status];
   const color = config.color;
   const isNoSignal = train.status === "no_signal";
+  const isLight = mapTheme === "light";
 
   const wrapper = document.createElement("div");
   wrapper.style.cssText = `
@@ -42,7 +45,25 @@ export function createTrainMarkerElement(
   `;
 
   const badge = document.createElement("div");
-  badge.style.cssText = `
+  badge.style.cssText = isLight
+    ? `
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    border: 1px solid ${color}66;
+    backdrop-filter: blur(8px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: ${color};
+    white-space: nowrap;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  `
+    : `
     display: flex;
     align-items: center;
     gap: 4px;
@@ -81,7 +102,7 @@ export function createTrainMarkerElement(
     speedSpan.style.cssText = `
       font-size: 9px;
       font-weight: 400;
-      color: rgba(255,255,255,0.5);
+      color: ${isLight ? "rgba(51, 65, 85, 0.75)" : "rgba(255,255,255,0.5)"};
       margin-left: 2px;
     `;
     speedSpan.textContent = `${train.speed}`;
@@ -95,7 +116,13 @@ export function createTrainMarkerElement(
     font-family: 'JetBrains Mono', monospace;
     font-size: 9px;
     font-weight: 700;
-    color: ${isNoSignal ? "rgba(255,255,255,0.3)" : color};
+    color: ${
+      isNoSignal
+        ? isLight
+          ? "rgba(100, 116, 139, 0.95)"
+          : "rgba(255,255,255,0.3)"
+        : color
+    };
     text-align: center;
   `;
   scoreEl.textContent = isNoSignal

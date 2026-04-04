@@ -13,6 +13,7 @@
 
   --accent-primary: #38bdf8;
   --accent-secondary: #6366f1;
+  --accent-soft: rgba(56, 189, 248, 0.14);
 
   --success: #22d3a0;
   --warning: #f59e0b;
@@ -23,23 +24,30 @@
   --chart-2: #22d3a0;
   --chart-3: #f59e0b;
   --chart-4: #6366f1;
+
+  --map-canvas-bg: #0a0d14;
+  --gauge-detail: #e8edf5;
+  --gauge-track-rest: rgba(255, 255, 255, 0.06);
+  --gauge-inner-ring: rgba(255, 255, 255, 0.05);
+  --card-shadow: none;
 }
 
 [data-theme="light"] {
-  --bg-base: #f1f4f9;
-  --bg-elevated: #ffffff;
-  --bg-panel: #e8edf5;
-  --bg-overlay: rgba(255, 255, 255, 0.92);
+  --bg-base: #d8dee8;
+  --bg-elevated: #eef1f6;
+  --bg-panel: #ffffff;
+  --bg-overlay: rgba(255, 255, 255, 0.94);
 
-  --border-subtle: rgba(15, 23, 42, 0.08);
-  --border-accent: rgba(14, 165, 233, 0.35);
+  --border-subtle: rgba(15, 23, 42, 0.12);
+  --border-accent: rgba(14, 165, 233, 0.45);
 
   --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
 
   --accent-primary: #0284c7;
   --accent-secondary: #4f46e5;
+  --accent-soft: rgba(2, 132, 199, 0.16);
 
   --success: #059669;
   --warning: #d97706;
@@ -50,4 +58,11 @@
   --chart-2: #059669;
   --chart-3: #d97706;
   --chart-4: #4f46e5;
+
+  --map-canvas-bg: #cdd6e4;
+  --gauge-detail: #0f172a;
+  --gauge-track-rest: rgba(15, 23, 42, 0.12);
+  --gauge-inner-ring: rgba(15, 23, 42, 0.08);
+  --card-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.05);
 }
