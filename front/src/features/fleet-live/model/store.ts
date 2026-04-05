@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { getStompBrokerUrlForDebug, getStompClient } from "@/shared/lib/stomp";
 import { apiClient } from "@/shared/api/client";
-import type { Train, TrainStatus, TrainModel } from "@/entities/train/model/types";
+import type {
+  Train,
+  TrainStatus,
+  TrainModel,
+  TelemetrySnapshot,
+} from "@/entities/train/model/types";
+import { wsToTelemetrySnapshot } from "@/entities/train/lib/wsToTelemetrySnapshot";
+import { useTelemetryHistoryStore } from "./telemetryHistoryStore";
 
 const FLEET_UI_DEBOUNCE_MS = 120;
 
@@ -58,6 +65,34 @@ export interface WsTrainState {
   parameterZones: Record<string, "green" | "yellow" | "red"> | null;
   routePathCoordinates: [number, number][] | null;
   trainRunStartedAt: string | null;
+}
+
+const TELEMETRY_HISTORY_MIN_STEP_MS = 5000;
+
+const lastSeqKeyByLocomotive = new Map<string, string>();
+const lastHistoryTsByLocomotive = new Map<string, number>();
+const lastChartAppendAtByLocomotive = new Map<string, number>();
+
+function appendTelemetryHistoryFromWs(ws: WsTrainState): void {
+  const id = ws.locomotiveId;
+  if (id == null || id === "") return;
+  const seqKey = `${id}:${ws.seq}`;
+  if (lastSeqKeyByLocomotive.get(id) === seqKey) return;
+  lastSeqKeyByLocomotive.set(id, seqKey);
+
+  const wall = Date.now();
+  const lastAppend = lastChartAppendAtByLocomotive.get(id) ?? 0;
+  if (wall - lastAppend < TELEMETRY_HISTORY_MIN_STEP_MS) return;
+
+  lastChartAppendAtByLocomotive.set(id, wall);
+
+  const snapshot = wsToTelemetrySnapshot(ws);
+  let ts = wall;
+  const prevLast = lastHistoryTsByLocomotive.get(id) ?? 0;
+  if (ts <= prevLast) ts = prevLast + 1;
+  lastHistoryTsByLocomotive.set(id, ts);
+  const point: TelemetrySnapshot = { ...snapshot, ts };
+  useTelemetryHistoryStore.getState()._appendPoint(id, point);
 }
 
 export function deriveTrainStatus(ws: WsTrainState): TrainStatus {
@@ -138,6 +173,7 @@ export const useFleetLiveStore = create<FleetLiveState>((set) => ({
       if (ws.locomotiveId == null || ws.locomotiveId === "") {
         return state;
       }
+      appendTelemetryHistoryFromWs(ws);
       const next = new Map(state.trains);
       next.set(ws.locomotiveId, ws);
       pushLiveEvent(ws);
