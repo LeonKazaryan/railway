@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Zap, X, ExternalLink } from "lucide-react";
+import { ExternalLink, X, Zap } from "lucide-react";
 import { getStompClient } from "@/shared/lib/stomp";
 import { useTrainSelectionStore } from "@/features/train-selection/model/store";
+import { useAlertHistoryStore } from "@/entities/alert/model/historyStore";
 import { useAlertToastStore, type AlertToastItem } from "../model/store";
 
 const AUTO_DISMISS_MS = 8000;
@@ -31,6 +32,15 @@ export function useFleetAlertSubscription() {
         try {
           const alert: WsAlert = JSON.parse(msg.body);
           useAlertToastStore.getState().push({
+            locomotiveId: alert.locomotiveId,
+            trainId: alert.trainId,
+            code: alert.code,
+            severity: alert.severity,
+            title: alert.title,
+            message: alert.message,
+            ts: alert.ts,
+          });
+          useAlertHistoryStore.getState().push({
             locomotiveId: alert.locomotiveId,
             trainId: alert.trainId,
             code: alert.code,

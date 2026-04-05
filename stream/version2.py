@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 # CONFIGURATION
 # ============================================================
 
-FLEET_SIZE: int = 10
+FLEET_SIZE: int = 25
 SINGLE_TRAIN_SPEED_KPH: float = float(os.environ.get("SINGLE_TRAIN_SPEED_KPH", "18"))
 _MODEL_ROTATION: tuple[str, ...] = ("KZ4A", "KZ8A", "TE33A")
 STREAM_HZ: float = 2.0

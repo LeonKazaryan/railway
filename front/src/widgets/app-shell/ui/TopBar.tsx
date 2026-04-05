@@ -1,19 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, Bell, Settings, Filter } from "lucide-react";
+import { Bell, Filter, Search, Settings } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import { useFleetLayoutStore } from "@/features/fleet-layout/model/store";
+import { useNavStore, type TopNavTab } from "@/features/nav/model/store";
 import { useLocaleStore } from "@/features/locale/model/store";
 import { SettingsMenu } from "@/widgets/settings-menu/ui/SettingsMenu";
 import logoUrl from "../../../../assets/logo.png";
 
-const NAV_TABS = [
-  { id: "fleet" as const, labelKey: "topBar.fleetView" as const },
-  { id: "dispatcher" as const, labelKey: "topBar.dispatcher" as const },
-  { id: "engineer" as const, labelKey: "topBar.engineer" as const },
+const NAV_TABS: { id: TopNavTab; labelKey: string }[] = [
+  { id: "fleet", labelKey: "topBar.fleetView" },
+  { id: "trainList", labelKey: "topBar.trainList" },
 ];
-
-type TabId = (typeof NAV_TABS)[number]["id"];
 
 function localeToBcp47(locale: string) {
   if (locale === "kk") return "kk-KZ";
@@ -24,7 +22,8 @@ function localeToBcp47(locale: string) {
 export function TopBar() {
   const { t } = useTranslation();
   const appLocale = useLocaleStore((s) => s.locale);
-  const [activeTab, setActiveTab] = useState<TabId>("fleet");
+  const activeTab = useNavStore((s) => s.activeTab);
+  const setActiveTab = useNavStore((s) => s.setActiveTab);
   const [time, setTime] = useState(() => new Date());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLButtonElement>(null);
