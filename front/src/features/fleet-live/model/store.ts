@@ -57,6 +57,7 @@ export interface WsTrainState {
   currentMode: string | null;
   parameterZones: Record<string, "green" | "yellow" | "red"> | null;
   routePathCoordinates: [number, number][] | null;
+  trainRunStartedAt: string | null;
 }
 
 export function deriveTrainStatus(ws: WsTrainState): TrainStatus {
@@ -83,6 +84,28 @@ function formatTime(iso: string): string {
   }
 }
 
+export function formatIsoClock(iso: string | null | undefined): string {
+  if (iso == null || iso === "") return "--:--";
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "--:--";
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "--:--";
+  }
+}
+
+export function formatTrainRoute(ws: WsTrainState): string {
+  const line = ws.lineName?.trim();
+  if (line) return line;
+  const from = ws.originStation?.trim();
+  const to = ws.destinationStation?.trim();
+  if (from && to) return `${from} — ${to}`;
+  if (from) return from;
+  if (to) return to;
+  return "";
+}
+
 export function wsToTrain(ws: WsTrainState): Train {
   return {
     id: ws.locomotiveId,
@@ -92,7 +115,7 @@ export function wsToTrain(ws: WsTrainState): Train {
     healthScore: ws.healthIndex ?? 0,
     speed: Math.round(ws.speedKph ?? 0),
     position: { lng: ws.lon ?? 0, lat: ws.lat ?? 0 },
-    route: ws.lineName ?? "",
+    route: formatTrainRoute(ws),
     lastSeen: formatTime(ws.ts),
   };
 }

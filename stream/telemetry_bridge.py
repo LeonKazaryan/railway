@@ -43,6 +43,8 @@ def _sim_row_to_backend_body(s: dict[str, Any]) -> dict[str, Any]:
         body["trainRunId"] = s["train_run_id"]
     if s.get("route_id") is not None:
         body["routeId"] = s["route_id"]
+    if s.get("train_run_started_at") is not None:
+        body["trainRunStartedAt"] = s["train_run_started_at"]
     if s.get("geofence_id") is not None:
         body["geofenceId"] = s["geofence_id"]
     if s.get("active_geofences") is not None:

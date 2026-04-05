@@ -1,11 +1,13 @@
 import { useTranslation } from "react-i18next";
 import type {
+  ServerParameterZone,
   SystemZoneConfig,
   SystemZoneStatus,
 } from "@/entities/train/model/config";
 import {
   getSystemZoneStatus,
   getSystemZoneDisplayValue,
+  serverParameterZoneToStatus,
   SYSTEM_ZONE_STATUS_COLORS,
 } from "@/entities/train/model/config";
 import type { TelemetrySnapshot } from "@/entities/train/model/types";
@@ -17,18 +19,10 @@ const STATUS_ICON: Record<SystemZoneStatus, string> = {
   low: "↓",
 };
 
-type ServerZone = "green" | "yellow" | "red";
-
-function serverZoneToStatus(sz: ServerZone): SystemZoneStatus {
-  if (sz === "red") return "critical";
-  if (sz === "yellow") return "warning";
-  return "normal";
-}
-
 interface SystemCardProps {
   zone: SystemZoneConfig;
   snapshot: TelemetrySnapshot;
-  parameterZones?: Record<string, ServerZone> | null;
+  parameterZones?: Record<string, ServerParameterZone> | null;
 }
 
 export function SystemCard({ zone, snapshot, parameterZones }: SystemCardProps) {
@@ -36,9 +30,9 @@ export function SystemCard({ zone, snapshot, parameterZones }: SystemCardProps) 
   const rawValue = snapshot[zone.metricKey] as number;
   const displayValue = getSystemZoneDisplayValue(zone, rawValue);
 
-  const serverZone = parameterZones?.[zone.metricKey] as ServerZone | undefined;
+  const serverZone = parameterZones?.[zone.metricKey];
   const status: SystemZoneStatus = serverZone
-    ? serverZoneToStatus(serverZone)
+    ? serverParameterZoneToStatus(serverZone)
     : getSystemZoneStatus(zone, rawValue);
 
   const color = SYSTEM_ZONE_STATUS_COLORS[status];

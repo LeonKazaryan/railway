@@ -6,10 +6,12 @@ import {
   type RefObject,
 } from "react";
 import type { TelemetrySnapshot } from "@/entities/train/model/types";
-import type { SystemZoneConfig } from "@/entities/train/model/config";
 import {
   getSystemZoneStatus,
+  serverParameterZoneToStatus,
   SYSTEM_ZONE_STATUS_COLORS,
+  type ServerParameterZone,
+  type SystemZoneConfig,
 } from "@/entities/train/model/config";
 import type { SystemZoneId } from "@/entities/train/model/systemZoneAnchors";
 
@@ -20,6 +22,7 @@ export interface UseTwinLeaderLinesParams {
   anchors: Record<SystemZoneId, { x: number; y: number }>;
   snapshot: TelemetrySnapshot;
   zoneConfigs: SystemZoneConfig[];
+  parameterZones: Record<string, ServerParameterZone> | null;
 }
 
 const ZONE_ATTACHMENT: Record<SystemZoneId, "left" | "right" | "bottom"> = {
@@ -123,6 +126,7 @@ export function useTwinLeaderLines({
   anchors,
   snapshot,
   zoneConfigs,
+  parameterZones,
 }: UseTwinLeaderLinesParams): {
   lines: LeaderLineDraw[];
   overlay: LeaderOverlayMetrics;
@@ -199,7 +203,10 @@ export function useTwinLeaderLines({
     const next: LeaderLineDraw[] = rawPaths.map(({ id, d, ex, ey }) => {
       const cfg = zoneById[id];
       const raw = snapshot[cfg.metricKey] as number;
-      const status = getSystemZoneStatus(cfg, raw);
+      const serverZone = parameterZones?.[cfg.metricKey];
+      const status = serverZone
+        ? serverParameterZoneToStatus(serverZone)
+        : getSystemZoneStatus(cfg, raw);
       const color = SYSTEM_ZONE_STATUS_COLORS[status];
       const dOverlay = toOverlayPath(d, originX, originY);
       return {
@@ -218,7 +225,7 @@ export function useTwinLeaderLines({
       height: imH,
     });
     setLines(next);
-  }, [diagramRef, imageRef, zoneRefs, anchors, snapshot, zoneConfigs]);
+  }, [diagramRef, imageRef, zoneRefs, anchors, snapshot, zoneConfigs, parameterZones]);
 
   useLayoutEffect(() => {
     measure();

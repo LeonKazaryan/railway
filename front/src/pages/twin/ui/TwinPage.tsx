@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
 import { useLiveTelemetry } from "@/entities/train/hooks/useLiveTelemetry";
 import {
+  formatIsoClock,
   useFleetLiveStore,
   wsToTrain,
 } from "@/features/fleet-live/model/store";
@@ -56,7 +57,7 @@ export function TwinPage({ trainId }: TwinPageProps) {
     serialNumber: ws?.serialNumber ?? "N/A",
     operatorName: "KTZ Express",
     mode: modeFromCurrentMode(ws?.currentMode ?? null),
-    startedAt: "--:--",
+    startedAt: formatIsoClock(ws?.trainRunStartedAt),
   };
 
   return (

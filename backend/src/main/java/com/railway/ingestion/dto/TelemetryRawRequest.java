@@ -34,6 +34,7 @@ public class TelemetryRawRequest {
     private String destinationStation;
     private UUID trainRunId;
     private String routeId;
+    private Instant trainRunStartedAt;
     private UUID geofenceId;
     private List<String> activeGeofences = new ArrayList<>();
 

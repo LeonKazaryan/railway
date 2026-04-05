@@ -1858,6 +1858,7 @@ class LocomotiveRuntime:
             "seq": self.seq,
             "train_run_id": self.train_run_id,
             "route_id": self.route.trip_id,
+            "train_run_started_at": self.train_run_model.started_at,
             "network_id": self.network.network_id,
             "network_name": self.network.name,
             "origin_station": self.route.origin_station,

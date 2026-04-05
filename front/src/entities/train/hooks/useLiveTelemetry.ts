@@ -1,11 +1,12 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import type { TelemetrySnapshot, TelemetryBuffer } from "../model/types";
 import {
   useFleetLiveStore,
   type WsTrainState,
 } from "@/features/fleet-live/model/store";
 
-const HISTORY_CAPACITY = 300;
+const MAX_HISTORY_AGE_MS = 4 * 60 * 60 * 1000;
+const MAX_HISTORY_POINTS = 50000;
 
 function wsToSnapshot(ws: WsTrainState): TelemetrySnapshot {
   return {
@@ -58,7 +59,14 @@ const EMPTY_SNAPSHOT: TelemetrySnapshot = {
 export function useLiveTelemetry(trainId: string): TelemetryBuffer {
   const historyRef = useRef<TelemetrySnapshot[]>([]);
   const lastSeqKeyRef = useRef<string>("");
+  const lastHistoryTsRef = useRef(0);
   const getHistory = useCallback(() => historyRef.current, []);
+
+  useEffect(() => {
+    historyRef.current = [];
+    lastSeqKeyRef.current = "";
+    lastHistoryTsRef.current = 0;
+  }, [trainId]);
 
   const trains = useFleetLiveStore((s) => s.trains);
 
@@ -75,9 +83,16 @@ export function useLiveTelemetry(trainId: string): TelemetryBuffer {
   const seqKey = ws ? `${ws.locomotiveId}:${ws.seq}` : "";
   if (ws && seqKey !== lastSeqKeyRef.current) {
     lastSeqKeyRef.current = seqKey;
+    const wall = Date.now();
+    let ts = wall;
+    if (ts <= lastHistoryTsRef.current) ts = lastHistoryTsRef.current + 1;
+    lastHistoryTsRef.current = ts;
+    const point: TelemetrySnapshot = { ...snapshot, ts };
     const buf = historyRef.current;
-    if (buf.length >= HISTORY_CAPACITY) buf.shift();
-    buf.push(snapshot);
+    buf.push(point);
+    const horizon = wall - MAX_HISTORY_AGE_MS;
+    while (buf.length > 0 && buf[0].ts < horizon) buf.shift();
+    while (buf.length > MAX_HISTORY_POINTS) buf.shift();
   }
 
   return { snapshot, history: getHistory() };

@@ -50,6 +50,7 @@ public class TrainLiveStateStore {
                     .lineName(request.getLineName())
                     .originStation(request.getOriginStation())
                     .destinationStation(request.getDestinationStation())
+                    .trainRunStartedAt(request.getTrainRunStartedAt())
                     .lat(request.getLat())
                     .lon(request.getLon())
                     .altM(request.getAltM())

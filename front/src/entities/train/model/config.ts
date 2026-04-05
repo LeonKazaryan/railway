@@ -129,6 +129,16 @@ export const TELEMETRY_CHART_CONFIG: TelemetryChartConfig[] = [
   },
 ];
 
+export type ServerParameterZone = "green" | "yellow" | "red";
+
+export function serverParameterZoneToStatus(
+  sz: ServerParameterZone,
+): SystemZoneStatus {
+  if (sz === "red") return "critical";
+  if (sz === "yellow") return "warning";
+  return "normal";
+}
+
 export function getSystemZoneStatus(
   config: SystemZoneConfig,
   rawValue: number,

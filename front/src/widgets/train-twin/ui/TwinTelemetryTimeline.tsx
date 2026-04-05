@@ -10,11 +10,11 @@ import { cn } from "@/shared/lib/cn";
 const TIME_RANGE_IDS = ["m5", "m15", "h1", "h4"] as const;
 type TimeRangeId = (typeof TIME_RANGE_IDS)[number];
 
-const RANGE_POINTS: Record<TimeRangeId, number> = {
-  m5: 300,
-  m15: 900,
-  h1: 3600,
-  h4: 14400,
+const TIME_RANGE_MS: Record<TimeRangeId, number> = {
+  m5: 5 * 60 * 1000,
+  m15: 15 * 60 * 1000,
+  h1: 60 * 60 * 1000,
+  h4: 4 * 60 * 60 * 1000,
 };
 
 interface MiniChartProps {
@@ -24,6 +24,8 @@ interface MiniChartProps {
   color: string;
   data: [number, number][];
   currentValue: string;
+  timeMin: number;
+  timeMax: number;
 }
 
 const MiniChart = memo(function MiniChart({
@@ -33,6 +35,8 @@ const MiniChart = memo(function MiniChart({
   data,
   currentValue,
   chartId,
+  timeMin,
+  timeMax,
 }: MiniChartProps) {
   const echartsRef = useRef<ECharts | null>(null);
   const theme = useThemeStore((s) => s.theme);
@@ -40,19 +44,43 @@ const MiniChart = memo(function MiniChart({
   const option = useMemo(() => {
     const axisMuted =
       theme === "light" ? "rgba(15,23,42,0.42)" : "rgba(255,255,255,0.3)";
+    let xMin = timeMin;
+    let xMax = timeMax;
+    if (data.length === 0) {
+      xMin = timeMin;
+      xMax = timeMax;
+    } else if (data.length === 1) {
+      const t = data[0][0];
+      xMin = t - 60_000;
+      xMax = t + 60_000;
+    } else if (xMax <= xMin) {
+      xMin -= 60_000;
+      xMax += 60_000;
+    }
+    const spanMs = Math.max(1, xMax - xMin);
+    const axisFormatter = (val: number) => {
+      const d = new Date(val);
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      if (spanMs > 48 * 60 * 60 * 1000) {
+        return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+      if (spanMs > 2 * 60 * 60 * 1000) {
+        return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
     return {
       backgroundColor: "transparent",
       grid: { top: 4, bottom: 16, left: 4, right: 4 },
       xAxis: {
         type: "time",
         show: true,
+        min: xMin,
+        max: xMax,
         axisLabel: {
           color: axisMuted,
           fontSize: 8,
-          formatter: (val: number) => {
-            const d = new Date(val);
-            return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
-          },
+          formatter: axisFormatter,
         },
         axisLine: { show: false },
         splitLine: { show: false },
@@ -85,7 +113,7 @@ const MiniChart = memo(function MiniChart({
         },
       ],
     };
-  }, [data, color, theme]);
+  }, [data, color, theme, timeMin, timeMax]);
 
   useEffect(() => {
     if (echartsRef.current && data.length > 0) {
@@ -142,8 +170,26 @@ export function TwinTelemetryTimeline({ history }: TwinTelemetryTimelineProps) {
   const { t } = useTranslation();
   const [range, setRange] = useState<TimeRangeId>("m5");
 
-  const maxPoints = RANGE_POINTS[range];
-  const slice = history.slice(-maxPoints);
+  const { slice, timeMin, timeMax } = useMemo(() => {
+    const windowMs = TIME_RANGE_MS[range];
+    if (history.length === 0) {
+      const now = Date.now();
+      return {
+        slice: [] as TelemetrySnapshot[],
+        timeMin: now - windowMs,
+        timeMax: now,
+      };
+    }
+    const latestTs = history[history.length - 1].ts;
+    const cutoff = latestTs - windowMs;
+    const filtered = history.filter((s) => s.ts >= cutoff);
+    return {
+      slice: filtered,
+      timeMin: cutoff,
+      timeMax: latestTs,
+    };
+  }, [history, range]);
+
   const latest = history[history.length - 1];
 
   return (
@@ -201,6 +247,8 @@ export function TwinTelemetryTimeline({ history }: TwinTelemetryTimelineProps) {
               color={cfg.color}
               data={chartData}
               currentValue={currentValue}
+              timeMin={timeMin}
+              timeMax={timeMax}
             />
           );
         })}

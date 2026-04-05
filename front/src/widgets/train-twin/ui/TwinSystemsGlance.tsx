@@ -44,6 +44,7 @@ export function TwinSystemsGlance({ snapshot, model, parameterZones }: TwinSyste
     anchors,
     snapshot,
     zoneConfigs: SYSTEM_ZONE_CONFIG,
+    parameterZones: parameterZones ?? null,
   });
 
   return (
