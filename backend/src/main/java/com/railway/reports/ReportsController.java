@@ -30,7 +30,7 @@ public class ReportsController {
 
         List<TelemetryRecord> records = history.window(id, from, to);
 
-        String header = "ts,lat,lon,speedKphEma,brakePressureKpaEma,motorTempC,health,status\n";
+        String header = "ts,lat,lon,speedKphEma,brakePipePressureKpaEma,engineTempC,health,status\n";
         String rows = records.stream().map(r -> {
             var t = r.getTelemetry();
             var h = r.getHealth();
@@ -39,8 +39,8 @@ public class ReportsController {
                     t.getLat() == null ? "" : t.getLat(),
                     t.getLon() == null ? "" : t.getLon(),
                     t.getSpeedKphEma() == null ? "" : t.getSpeedKphEma(),
-                    t.getBrakePressureKpaEma() == null ? "" : t.getBrakePressureKpaEma(),
-                    t.getMotorTempC() == null ? "" : t.getMotorTempC(),
+                    t.getBrakePipePressureKpaEma() == null ? "" : t.getBrakePipePressureKpaEma(),
+                    t.getEngineTempC() == null ? "" : t.getEngineTempC(),
                     h == null ? 0 : h.getHealth(),
                     h == null ? "" : h.getStatus());
         }).collect(Collectors.joining("\n"));

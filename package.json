@@ -1,0 +1,14 @@
+{
+  "name": "raillens",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n front,backend,sim,bridge -c cyan,green,yellow,magenta \"npm run dev --prefix front\" \"cd backend && mvn spring-boot:run\" \"cd stream && python3 version2.py\" \"cd stream && python3 telemetry_bridge.py\"",
+    "dev:front": "npm run dev --prefix front",
+    "dev:backend": "cd backend && mvn spring-boot:run",
+    "dev:sim": "cd stream && python3 version2.py",
+    "dev:bridge": "cd stream && python3 telemetry_bridge.py"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

@@ -1,112 +1,92 @@
 package com.railway.health;
 
+import com.railway.health.ParameterZoneService.Zone;
 import com.railway.health.dto.HealthFactor;
 import com.railway.health.dto.HealthResult;
 import com.railway.health.dto.HealthStatus;
-import com.railway.normalization.dto.NormalizedTelemetry;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class HealthEngine {
 
-    // Thresholds (could be externalized to Config Service)
-    private static final float MOTOR_TEMP_WARN = 95f;
-    private static final float MOTOR_TEMP_CRIT = 105f;
-    private static final float BRAKE_PRESS_WARN = 250f;
-    private static final float BRAKE_PRESS_CRIT = 150f;
-    private static final float FUEL_WARN = 20f;
-    private static final float FUEL_CRIT = 10f;
+    private static final int RED_CAP = 35;
 
-    public HealthResult compute(NormalizedTelemetry t) {
-        int base = 100;
+    private static final int ZONE_SCORE_GREEN  = 100;
+    private static final int ZONE_SCORE_YELLOW = 50;
+    private static final int ZONE_SCORE_RED    = 0;
+
+    public HealthResult computeFromZones(Map<String, Zone> zones) {
+        if (zones.isEmpty()) {
+            return HealthResult.builder()
+                    .health(100)
+                    .status(HealthStatus.NORMAL)
+                    .topFactors(List.of())
+                    .reason("No parameters available for evaluation")
+                    .build();
+        }
+
+        long totalWeight = 0;
+        long weightedSum = 0;
+        boolean anyRed = false;
         List<HealthFactor> factors = new ArrayList<>();
 
-        // Motor temperature penalties
-        if (t.getMotorTempC() != null) {
-            float temp = t.getMotorTempC();
-            if (temp > MOTOR_TEMP_WARN) {
-                int impact = (int) Math.min(30, (temp - MOTOR_TEMP_WARN) * 0.8f);
-                factors.add(new HealthFactor("motor_temp_c", -impact));
-                base -= impact;
-            }
-            if (temp > MOTOR_TEMP_CRIT) {
-                int extra = (int) Math.min(25, (temp - MOTOR_TEMP_CRIT));
-                factors.add(new HealthFactor("motor_temp_critical", -extra));
-                base -= extra;
+        for (Map.Entry<String, Zone> entry : zones.entrySet()) {
+            String param = entry.getKey();
+            Zone zone = entry.getValue();
+            int weight = ParameterZoneService.weightOf(param);
+            if (weight == 0) continue;
+
+            int score = zoneScore(zone);
+            totalWeight += weight;
+            weightedSum += (long) score * weight;
+
+            if (zone == Zone.RED) {
+                anyRed = true;
+                factors.add(new HealthFactor(param, -(100 - score) * weight / 100));
+            } else if (zone == Zone.YELLOW) {
+                factors.add(new HealthFactor(param, -(100 - score) * weight / 100));
             }
         }
 
-        // Brake pressure low penalties
-        if (t.getBrakePressureKpaEma() != null) {
-            float b = t.getBrakePressureKpaEma();
-            if (b < BRAKE_PRESS_WARN) {
-                int impact = (int) Math.min(25, (BRAKE_PRESS_WARN - b) * 0.05f);
-                factors.add(new HealthFactor("brake_pressure_low", -impact));
-                base -= impact;
-            }
-            if (b < BRAKE_PRESS_CRIT) {
-                int extra = (int) Math.min(25, (BRAKE_PRESS_CRIT - b) * 0.08f);
-                factors.add(new HealthFactor("brake_pressure_critical", -extra));
-                base -= extra;
-            }
+        int hp = totalWeight > 0 ? (int) (weightedSum / totalWeight) : 100;
+
+        if (anyRed) {
+            hp = Math.min(hp, RED_CAP);
         }
 
-        // Fuel low penalties
-        if (t.getFuelLevelPct() != null) {
-            float f = t.getFuelLevelPct();
-            if (f < FUEL_WARN) {
-                int impact = (int) Math.min(10, (FUEL_WARN - f) * 0.2f);
-                factors.add(new HealthFactor("fuel_low", -impact));
-                base -= impact;
-            }
-            if (f < FUEL_CRIT) {
-                int extra = (int) Math.min(10, (FUEL_CRIT - f) * 0.3f);
-                factors.add(new HealthFactor("fuel_critical", -extra));
-                base -= extra;
-            }
-        }
+        hp = Math.max(0, Math.min(100, hp));
 
-        // Communication state penalty hint
-        if (t.getCommState() != null) {
-            switch (t.getCommState()) {
-                case DEGRADED -> {
-                    factors.add(new HealthFactor("comm_degraded", -5));
-                    base -= 5;
-                }
-                case OFFLINE -> {
-                    factors.add(new HealthFactor("comm_offline", -15));
-                    base -= 15;
-                }
-                default -> {}
-            }
-        }
-
-        // Build top-5 factors
-        factors.sort(Comparator.comparingInt(HealthFactor::getImpact)); // most negative first
+        factors.sort(Comparator.comparingInt(HealthFactor::getImpact));
         List<HealthFactor> top = factors.size() > 5 ? factors.subList(0, 5) : factors;
 
-        HealthStatus status = base >= 80 ? HealthStatus.NORMAL
-                : base >= 60 ? HealthStatus.WARNING
+        HealthStatus status = hp > 90 ? HealthStatus.NORMAL
+                : hp >= 70 ? HealthStatus.WARNING
                 : HealthStatus.CRITICAL;
 
-        String reason = buildReason(top);
-
         return HealthResult.builder()
-                .health(Math.max(0, Math.min(100, base)))
+                .health(hp)
                 .status(status)
                 .topFactors(new ArrayList<>(top))
-                .reason(reason)
+                .reason(buildReason(top))
                 .build();
+    }
+
+    private int zoneScore(Zone zone) {
+        return switch (zone) {
+            case GREEN -> ZONE_SCORE_GREEN;
+            case YELLOW -> ZONE_SCORE_YELLOW;
+            case RED -> ZONE_SCORE_RED;
+        };
     }
 
     private String buildReason(List<HealthFactor> factors) {
         if (factors.isEmpty()) return "All key parameters within nominal ranges";
-        StringBuilder sb = new StringBuilder();
-        sb.append("Top factors: ");
+        StringBuilder sb = new StringBuilder("Top factors: ");
         for (int i = 0; i < factors.size(); i++) {
             var f = factors.get(i);
             sb.append(f.getName()).append(" (").append(f.getImpact()).append(")");

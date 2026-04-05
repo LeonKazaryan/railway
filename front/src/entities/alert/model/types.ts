@@ -8,4 +8,9 @@ export interface Alert {
   minutesAgo: number;
   time: string;
   isNew?: boolean;
+  tsMs: number;
+  metaLine: string;
+  faultCode: string | null;
+  problemLine: string;
+  problemI18nKey: string | null;
 }

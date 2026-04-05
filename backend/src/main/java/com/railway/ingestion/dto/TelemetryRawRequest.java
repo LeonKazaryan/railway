@@ -1,8 +1,5 @@
 package com.railway.ingestion.dto;
 
-import com.railway.ingestion.enumtype.AlarmStatus;
-import com.railway.ingestion.enumtype.CommState;
-import com.railway.ingestion.enumtype.DoorsState;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -29,6 +26,18 @@ public class TelemetryRawRequest {
     @PositiveOrZero
     private Long seq;
 
+    private String serialNumber;
+    private String trainId;
+    private String lineId;
+    private String lineName;
+    private String originStation;
+    private String destinationStation;
+    private UUID trainRunId;
+    private String routeId;
+    private Instant trainRunStartedAt;
+    private UUID geofenceId;
+    private List<String> activeGeofences = new ArrayList<>();
+
     @NotNull
     @DecimalMin("-90.0")
     @DecimalMax("90.0")
@@ -49,33 +58,42 @@ public class TelemetryRawRequest {
     @DecimalMax("360.0")
     private Float headingDeg;
 
-    private Float voltageV;
+    private Float brakePipePressureKpa;
+    private Float mainReservoirPressureKpa;
+    private Float brakeCylinderPressureKpa;
+    private Float brakePipeLeakKpaPerMin;
+    private String brakeStatus;
+
+    private Float batteryVoltageV;
+    private Float tractionVoltageV;
     private Float currentA;
-    private Float motorTempC;
-    private Float brakePressureKpa;
+
+    private Float engineRpm;
+    private Float engineTempC;
+    private Float oilTempC;
 
     @DecimalMin("0.0")
     @DecimalMax("100.0")
     private Float fuelLevelPct;
 
-    @DecimalMin("0.0")
-    @DecimalMax("100.0")
-    private Float energyLevelPct;
+    private Float fuelConsumptionRateLph;
 
-    @NotNull
-    private DoorsState doorsState;
+    private Float tractiveEffortKn;
+    private Float dynamicBrakeForceKn;
 
-    @NotNull
-    private AlarmStatus alarmStatus;
+    private Float alerterTimerSec;
+    private Boolean pcsOpen;
+    private String eabStatus;
+    private String commState;
 
-    @NotNull
-    private CommState commState;
-
-    private UUID routeId;
-    private UUID geofenceId;
-
+    private String alarmStatus;
     private List<String> faultCodes = new ArrayList<>();
+    private Integer healthIndex;
 
     private Map<String, Object> driverState = new HashMap<>();
-    private UUID trainRunId;
+    private Float weatherFactor;
+    private Float trackGradePct;
+    private String currentMode;
+
+    private List<List<Double>> routePathCoordinates;
 }

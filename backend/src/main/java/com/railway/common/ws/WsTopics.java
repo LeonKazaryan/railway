@@ -8,6 +8,8 @@ public final class WsTopics {
     }
 
     public static final String STREAM_STATUS = "/topic/stream-status";
+    public static final String FLEET_STATE = "/topic/fleet";
+    public static final String FLEET_ALERTS = "/topic/fleet-alerts";
 
     public static String trainState(UUID trainId) {
         return "/topic/train/" + trainId + "/state";

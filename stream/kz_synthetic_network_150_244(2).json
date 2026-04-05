@@ -1,0 +1,2914 @@
+{
+  "stations": [
+    {
+      "station_id": 1,
+      "anchor": "Petropavl",
+      "station_name": "Petropavl Central",
+      "lat": 54.87,
+      "lon": 69.15,
+      "kind": "hub"
+    },
+    {
+      "station_id": 2,
+      "anchor": "Petropavl",
+      "station_name": "Petropavl North",
+      "lat": 55.15,
+      "lon": 69.15,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 3,
+      "anchor": "Petropavl",
+      "station_name": "Petropavl East",
+      "lat": 54.87,
+      "lon": 69.5,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 4,
+      "anchor": "Petropavl",
+      "station_name": "Petropavl South",
+      "lat": 54.59,
+      "lon": 69.15,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 5,
+      "anchor": "Kostanay",
+      "station_name": "Kostanay Central",
+      "lat": 53.22,
+      "lon": 63.63,
+      "kind": "hub"
+    },
+    {
+      "station_id": 6,
+      "anchor": "Kostanay",
+      "station_name": "Kostanay North",
+      "lat": 53.5,
+      "lon": 63.63,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 7,
+      "anchor": "Kostanay",
+      "station_name": "Kostanay East",
+      "lat": 53.22,
+      "lon": 63.98,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 8,
+      "anchor": "Kostanay",
+      "station_name": "Kostanay South",
+      "lat": 52.94,
+      "lon": 63.63,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 9,
+      "anchor": "Rudny",
+      "station_name": "Rudny Central",
+      "lat": 52.97,
+      "lon": 63.12,
+      "kind": "hub"
+    },
+    {
+      "station_id": 10,
+      "anchor": "Rudny",
+      "station_name": "Rudny North",
+      "lat": 53.25,
+      "lon": 63.12,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 11,
+      "anchor": "Rudny",
+      "station_name": "Rudny East",
+      "lat": 52.97,
+      "lon": 63.47,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 12,
+      "anchor": "Rudny",
+      "station_name": "Rudny South",
+      "lat": 52.69,
+      "lon": 63.12,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 13,
+      "anchor": "Kokshetau",
+      "station_name": "Kokshetau Central",
+      "lat": 53.29,
+      "lon": 69.39,
+      "kind": "hub"
+    },
+    {
+      "station_id": 14,
+      "anchor": "Kokshetau",
+      "station_name": "Kokshetau North",
+      "lat": 53.57,
+      "lon": 69.39,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 15,
+      "anchor": "Kokshetau",
+      "station_name": "Kokshetau East",
+      "lat": 53.29,
+      "lon": 69.74,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 16,
+      "anchor": "Kokshetau",
+      "station_name": "Kokshetau South",
+      "lat": 53.01,
+      "lon": 69.39,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 17,
+      "anchor": "Astana",
+      "station_name": "Astana Central",
+      "lat": 51.17,
+      "lon": 71.45,
+      "kind": "hub"
+    },
+    {
+      "station_id": 18,
+      "anchor": "Astana",
+      "station_name": "Astana North",
+      "lat": 51.45,
+      "lon": 71.45,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 19,
+      "anchor": "Astana",
+      "station_name": "Astana East",
+      "lat": 51.17,
+      "lon": 71.8,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 20,
+      "anchor": "Astana",
+      "station_name": "Astana South",
+      "lat": 50.89,
+      "lon": 71.45,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 21,
+      "anchor": "Astana",
+      "station_name": "Astana West",
+      "lat": 51.17,
+      "lon": 71.1,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 22,
+      "anchor": "Astana",
+      "station_name": "Astana Junction",
+      "lat": 51.33,
+      "lon": 71.65,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 23,
+      "anchor": "Atbasar",
+      "station_name": "Atbasar Central",
+      "lat": 51.8,
+      "lon": 68.36,
+      "kind": "hub"
+    },
+    {
+      "station_id": 24,
+      "anchor": "Atbasar",
+      "station_name": "Atbasar North",
+      "lat": 52.08,
+      "lon": 68.36,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 25,
+      "anchor": "Atbasar",
+      "station_name": "Atbasar East",
+      "lat": 51.8,
+      "lon": 68.71,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 26,
+      "anchor": "Atbasar",
+      "station_name": "Atbasar South",
+      "lat": 51.52,
+      "lon": 68.36,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 27,
+      "anchor": "Pavlodar",
+      "station_name": "Pavlodar Central",
+      "lat": 52.29,
+      "lon": 76.97,
+      "kind": "hub"
+    },
+    {
+      "station_id": 28,
+      "anchor": "Pavlodar",
+      "station_name": "Pavlodar North",
+      "lat": 52.57,
+      "lon": 76.97,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 29,
+      "anchor": "Pavlodar",
+      "station_name": "Pavlodar East",
+      "lat": 52.29,
+      "lon": 77.32,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 30,
+      "anchor": "Pavlodar",
+      "station_name": "Pavlodar South",
+      "lat": 52.01,
+      "lon": 76.97,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 31,
+      "anchor": "Ekibastuz",
+      "station_name": "Ekibastuz Central",
+      "lat": 51.73,
+      "lon": 75.32,
+      "kind": "hub"
+    },
+    {
+      "station_id": 32,
+      "anchor": "Ekibastuz",
+      "station_name": "Ekibastuz North",
+      "lat": 52.01,
+      "lon": 75.32,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 33,
+      "anchor": "Ekibastuz",
+      "station_name": "Ekibastuz East",
+      "lat": 51.73,
+      "lon": 75.67,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 34,
+      "anchor": "Ekibastuz",
+      "station_name": "Ekibastuz South",
+      "lat": 51.45,
+      "lon": 75.32,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 35,
+      "anchor": "Karaganda",
+      "station_name": "Karaganda Central",
+      "lat": 49.8,
+      "lon": 73.11,
+      "kind": "hub"
+    },
+    {
+      "station_id": 36,
+      "anchor": "Karaganda",
+      "station_name": "Karaganda North",
+      "lat": 50.08,
+      "lon": 73.11,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 37,
+      "anchor": "Karaganda",
+      "station_name": "Karaganda East",
+      "lat": 49.8,
+      "lon": 73.46,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 38,
+      "anchor": "Karaganda",
+      "station_name": "Karaganda South",
+      "lat": 49.52,
+      "lon": 73.11,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 39,
+      "anchor": "Karaganda",
+      "station_name": "Karaganda West",
+      "lat": 49.8,
+      "lon": 72.76,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 40,
+      "anchor": "Karaganda",
+      "station_name": "Karaganda Junction",
+      "lat": 49.96,
+      "lon": 73.31,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 41,
+      "anchor": "Temirtau",
+      "station_name": "Temirtau Central",
+      "lat": 50.05,
+      "lon": 72.96,
+      "kind": "hub"
+    },
+    {
+      "station_id": 42,
+      "anchor": "Temirtau",
+      "station_name": "Temirtau North",
+      "lat": 50.33,
+      "lon": 72.96,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 43,
+      "anchor": "Temirtau",
+      "station_name": "Temirtau East",
+      "lat": 50.05,
+      "lon": 73.31,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 44,
+      "anchor": "Temirtau",
+      "station_name": "Temirtau South",
+      "lat": 49.77,
+      "lon": 72.96,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 45,
+      "anchor": "Jezkazgan",
+      "station_name": "Jezkazgan Central",
+      "lat": 47.8,
+      "lon": 67.71,
+      "kind": "hub"
+    },
+    {
+      "station_id": 46,
+      "anchor": "Jezkazgan",
+      "station_name": "Jezkazgan North",
+      "lat": 48.08,
+      "lon": 67.71,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 47,
+      "anchor": "Jezkazgan",
+      "station_name": "Jezkazgan East",
+      "lat": 47.8,
+      "lon": 68.06,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 48,
+      "anchor": "Jezkazgan",
+      "station_name": "Jezkazgan South",
+      "lat": 47.52,
+      "lon": 67.71,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 49,
+      "anchor": "Balkhash",
+      "station_name": "Balkhash Central",
+      "lat": 46.85,
+      "lon": 74.98,
+      "kind": "hub"
+    },
+    {
+      "station_id": 50,
+      "anchor": "Balkhash",
+      "station_name": "Balkhash North",
+      "lat": 47.13,
+      "lon": 74.98,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 51,
+      "anchor": "Balkhash",
+      "station_name": "Balkhash East",
+      "lat": 46.85,
+      "lon": 75.33,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 52,
+      "anchor": "Balkhash",
+      "station_name": "Balkhash South",
+      "lat": 46.57,
+      "lon": 74.98,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 53,
+      "anchor": "Semey",
+      "station_name": "Semey Central",
+      "lat": 50.41,
+      "lon": 80.23,
+      "kind": "hub"
+    },
+    {
+      "station_id": 54,
+      "anchor": "Semey",
+      "station_name": "Semey North",
+      "lat": 50.69,
+      "lon": 80.23,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 55,
+      "anchor": "Semey",
+      "station_name": "Semey East",
+      "lat": 50.41,
+      "lon": 80.58,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 56,
+      "anchor": "Semey",
+      "station_name": "Semey South",
+      "lat": 50.13,
+      "lon": 80.23,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 57,
+      "anchor": "Oskemen",
+      "station_name": "Oskemen Central",
+      "lat": 49.97,
+      "lon": 82.61,
+      "kind": "hub"
+    },
+    {
+      "station_id": 58,
+      "anchor": "Oskemen",
+      "station_name": "Oskemen North",
+      "lat": 50.25,
+      "lon": 82.61,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 59,
+      "anchor": "Oskemen",
+      "station_name": "Oskemen East",
+      "lat": 49.97,
+      "lon": 82.96,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 60,
+      "anchor": "Oskemen",
+      "station_name": "Oskemen South",
+      "lat": 49.69,
+      "lon": 82.61,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 61,
+      "anchor": "Ayagoz",
+      "station_name": "Ayagoz Central",
+      "lat": 47.96,
+      "lon": 80.43,
+      "kind": "hub"
+    },
+    {
+      "station_id": 62,
+      "anchor": "Ayagoz",
+      "station_name": "Ayagoz North",
+      "lat": 48.24,
+      "lon": 80.43,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 63,
+      "anchor": "Ayagoz",
+      "station_name": "Ayagoz East",
+      "lat": 47.96,
+      "lon": 80.78,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 64,
+      "anchor": "Ayagoz",
+      "station_name": "Ayagoz South",
+      "lat": 47.68,
+      "lon": 80.43,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 65,
+      "anchor": "Almaty",
+      "station_name": "Almaty Central",
+      "lat": 43.24,
+      "lon": 76.92,
+      "kind": "hub"
+    },
+    {
+      "station_id": 66,
+      "anchor": "Almaty",
+      "station_name": "Almaty North",
+      "lat": 43.52,
+      "lon": 76.92,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 67,
+      "anchor": "Almaty",
+      "station_name": "Almaty East",
+      "lat": 43.24,
+      "lon": 77.27,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 68,
+      "anchor": "Almaty",
+      "station_name": "Almaty South",
+      "lat": 42.96,
+      "lon": 76.92,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 69,
+      "anchor": "Almaty",
+      "station_name": "Almaty West",
+      "lat": 43.24,
+      "lon": 76.57,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 70,
+      "anchor": "Almaty",
+      "station_name": "Almaty Junction",
+      "lat": 43.4,
+      "lon": 77.12,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 71,
+      "anchor": "Taldykorgan",
+      "station_name": "Taldykorgan Central",
+      "lat": 45.01,
+      "lon": 78.37,
+      "kind": "hub"
+    },
+    {
+      "station_id": 72,
+      "anchor": "Taldykorgan",
+      "station_name": "Taldykorgan North",
+      "lat": 45.29,
+      "lon": 78.37,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 73,
+      "anchor": "Taldykorgan",
+      "station_name": "Taldykorgan East",
+      "lat": 45.01,
+      "lon": 78.72,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 74,
+      "anchor": "Taldykorgan",
+      "station_name": "Taldykorgan South",
+      "lat": 44.73,
+      "lon": 78.37,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 75,
+      "anchor": "Saryozek",
+      "station_name": "Saryozek Central",
+      "lat": 44.36,
+      "lon": 77.98,
+      "kind": "hub"
+    },
+    {
+      "station_id": 76,
+      "anchor": "Saryozek",
+      "station_name": "Saryozek North",
+      "lat": 44.64,
+      "lon": 77.98,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 77,
+      "anchor": "Saryozek",
+      "station_name": "Saryozek East",
+      "lat": 44.36,
+      "lon": 78.33,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 78,
+      "anchor": "Saryozek",
+      "station_name": "Saryozek South",
+      "lat": 44.08,
+      "lon": 77.98,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 79,
+      "anchor": "Shu",
+      "station_name": "Shu Central",
+      "lat": 43.6,
+      "lon": 73.76,
+      "kind": "hub"
+    },
+    {
+      "station_id": 80,
+      "anchor": "Shu",
+      "station_name": "Shu North",
+      "lat": 43.88,
+      "lon": 73.76,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 81,
+      "anchor": "Shu",
+      "station_name": "Shu East",
+      "lat": 43.6,
+      "lon": 74.11,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 82,
+      "anchor": "Shu",
+      "station_name": "Shu South",
+      "lat": 43.32,
+      "lon": 73.76,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 83,
+      "anchor": "Taraz",
+      "station_name": "Taraz Central",
+      "lat": 42.9,
+      "lon": 71.37,
+      "kind": "hub"
+    },
+    {
+      "station_id": 84,
+      "anchor": "Taraz",
+      "station_name": "Taraz North",
+      "lat": 43.18,
+      "lon": 71.37,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 85,
+      "anchor": "Taraz",
+      "station_name": "Taraz East",
+      "lat": 42.9,
+      "lon": 71.72,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 86,
+      "anchor": "Taraz",
+      "station_name": "Taraz South",
+      "lat": 42.62,
+      "lon": 71.37,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 87,
+      "anchor": "Shymkent",
+      "station_name": "Shymkent Central",
+      "lat": 42.32,
+      "lon": 69.59,
+      "kind": "hub"
+    },
+    {
+      "station_id": 88,
+      "anchor": "Shymkent",
+      "station_name": "Shymkent North",
+      "lat": 42.6,
+      "lon": 69.59,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 89,
+      "anchor": "Shymkent",
+      "station_name": "Shymkent East",
+      "lat": 42.32,
+      "lon": 69.94,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 90,
+      "anchor": "Shymkent",
+      "station_name": "Shymkent South",
+      "lat": 42.04,
+      "lon": 69.59,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 91,
+      "anchor": "Shymkent",
+      "station_name": "Shymkent West",
+      "lat": 42.32,
+      "lon": 69.24,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 92,
+      "anchor": "Shymkent",
+      "station_name": "Shymkent Junction",
+      "lat": 42.48,
+      "lon": 69.79,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 93,
+      "anchor": "Turkistan",
+      "station_name": "Turkistan Central",
+      "lat": 43.3,
+      "lon": 68.27,
+      "kind": "hub"
+    },
+    {
+      "station_id": 94,
+      "anchor": "Turkistan",
+      "station_name": "Turkistan North",
+      "lat": 43.58,
+      "lon": 68.27,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 95,
+      "anchor": "Turkistan",
+      "station_name": "Turkistan East",
+      "lat": 43.3,
+      "lon": 68.62,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 96,
+      "anchor": "Turkistan",
+      "station_name": "Turkistan South",
+      "lat": 43.02,
+      "lon": 68.27,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 97,
+      "anchor": "Kyzylorda",
+      "station_name": "Kyzylorda Central",
+      "lat": 44.85,
+      "lon": 65.51,
+      "kind": "hub"
+    },
+    {
+      "station_id": 98,
+      "anchor": "Kyzylorda",
+      "station_name": "Kyzylorda North",
+      "lat": 45.13,
+      "lon": 65.51,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 99,
+      "anchor": "Kyzylorda",
+      "station_name": "Kyzylorda East",
+      "lat": 44.85,
+      "lon": 65.86,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 100,
+      "anchor": "Kyzylorda",
+      "station_name": "Kyzylorda South",
+      "lat": 44.57,
+      "lon": 65.51,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 101,
+      "anchor": "Baikonur",
+      "station_name": "Baikonur Central",
+      "lat": 45.61,
+      "lon": 63.32,
+      "kind": "hub"
+    },
+    {
+      "station_id": 102,
+      "anchor": "Baikonur",
+      "station_name": "Baikonur North",
+      "lat": 45.89,
+      "lon": 63.32,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 103,
+      "anchor": "Baikonur",
+      "station_name": "Baikonur East",
+      "lat": 45.61,
+      "lon": 63.67,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 104,
+      "anchor": "Baikonur",
+      "station_name": "Baikonur South",
+      "lat": 45.33,
+      "lon": 63.32,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 105,
+      "anchor": "Aral",
+      "station_name": "Aral Central",
+      "lat": 46.8,
+      "lon": 61.67,
+      "kind": "hub"
+    },
+    {
+      "station_id": 106,
+      "anchor": "Aral",
+      "station_name": "Aral North",
+      "lat": 47.08,
+      "lon": 61.67,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 107,
+      "anchor": "Aral",
+      "station_name": "Aral East",
+      "lat": 46.8,
+      "lon": 62.02,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 108,
+      "anchor": "Aral",
+      "station_name": "Aral South",
+      "lat": 46.52,
+      "lon": 61.67,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 109,
+      "anchor": "Aktobe",
+      "station_name": "Aktobe Central",
+      "lat": 50.28,
+      "lon": 57.17,
+      "kind": "hub"
+    },
+    {
+      "station_id": 110,
+      "anchor": "Aktobe",
+      "station_name": "Aktobe North",
+      "lat": 50.56,
+      "lon": 57.17,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 111,
+      "anchor": "Aktobe",
+      "station_name": "Aktobe East",
+      "lat": 50.28,
+      "lon": 57.52,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 112,
+      "anchor": "Aktobe",
+      "station_name": "Aktobe South",
+      "lat": 50.0,
+      "lon": 57.17,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 113,
+      "anchor": "Aktobe",
+      "station_name": "Aktobe West",
+      "lat": 50.28,
+      "lon": 56.82,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 114,
+      "anchor": "Aktobe",
+      "station_name": "Aktobe Junction",
+      "lat": 50.44,
+      "lon": 57.37,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 115,
+      "anchor": "Kandyagash",
+      "station_name": "Kandyagash Central",
+      "lat": 49.47,
+      "lon": 57.43,
+      "kind": "hub"
+    },
+    {
+      "station_id": 116,
+      "anchor": "Kandyagash",
+      "station_name": "Kandyagash North",
+      "lat": 49.75,
+      "lon": 57.43,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 117,
+      "anchor": "Kandyagash",
+      "station_name": "Kandyagash East",
+      "lat": 49.47,
+      "lon": 57.78,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 118,
+      "anchor": "Kandyagash",
+      "station_name": "Kandyagash South",
+      "lat": 49.19,
+      "lon": 57.43,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 119,
+      "anchor": "Atyrau",
+      "station_name": "Atyrau Central",
+      "lat": 47.1,
+      "lon": 51.92,
+      "kind": "hub"
+    },
+    {
+      "station_id": 120,
+      "anchor": "Atyrau",
+      "station_name": "Atyrau North",
+      "lat": 47.38,
+      "lon": 51.92,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 121,
+      "anchor": "Atyrau",
+      "station_name": "Atyrau East",
+      "lat": 47.1,
+      "lon": 52.27,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 122,
+      "anchor": "Atyrau",
+      "station_name": "Atyrau South",
+      "lat": 46.82,
+      "lon": 51.92,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 123,
+      "anchor": "Aksaray",
+      "station_name": "Aksaray Central",
+      "lat": 47.07,
+      "lon": 51.91,
+      "kind": "hub"
+    },
+    {
+      "station_id": 124,
+      "anchor": "Aksaray",
+      "station_name": "Aksaray North",
+      "lat": 47.35,
+      "lon": 51.91,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 125,
+      "anchor": "Aksaray",
+      "station_name": "Aksaray East",
+      "lat": 47.07,
+      "lon": 52.26,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 126,
+      "anchor": "Aksaray",
+      "station_name": "Aksaray South",
+      "lat": 46.79,
+      "lon": 51.91,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 127,
+      "anchor": "Aktau",
+      "station_name": "Aktau Central",
+      "lat": 43.65,
+      "lon": 51.2,
+      "kind": "hub"
+    },
+    {
+      "station_id": 128,
+      "anchor": "Aktau",
+      "station_name": "Aktau North",
+      "lat": 43.93,
+      "lon": 51.2,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 129,
+      "anchor": "Aktau",
+      "station_name": "Aktau East",
+      "lat": 43.65,
+      "lon": 51.55,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 130,
+      "anchor": "Aktau",
+      "station_name": "Aktau South",
+      "lat": 43.37,
+      "lon": 51.2,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 131,
+      "anchor": "Zhanaozen",
+      "station_name": "Zhanaozen Central",
+      "lat": 43.34,
+      "lon": 52.86,
+      "kind": "hub"
+    },
+    {
+      "station_id": 132,
+      "anchor": "Zhanaozen",
+      "station_name": "Zhanaozen North",
+      "lat": 43.62,
+      "lon": 52.86,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 133,
+      "anchor": "Zhanaozen",
+      "station_name": "Zhanaozen East",
+      "lat": 43.34,
+      "lon": 53.21,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 134,
+      "anchor": "Zhanaozen",
+      "station_name": "Zhanaozen South",
+      "lat": 43.06,
+      "lon": 52.86,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 135,
+      "anchor": "Beyneu",
+      "station_name": "Beyneu Central",
+      "lat": 45.32,
+      "lon": 55.2,
+      "kind": "hub"
+    },
+    {
+      "station_id": 136,
+      "anchor": "Beyneu",
+      "station_name": "Beyneu North",
+      "lat": 45.6,
+      "lon": 55.2,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 137,
+      "anchor": "Beyneu",
+      "station_name": "Beyneu East",
+      "lat": 45.32,
+      "lon": 55.55,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 138,
+      "anchor": "Beyneu",
+      "station_name": "Beyneu South",
+      "lat": 45.04,
+      "lon": 55.2,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 139,
+      "anchor": "Oral",
+      "station_name": "Oral Central",
+      "lat": 51.23,
+      "lon": 51.37,
+      "kind": "hub"
+    },
+    {
+      "station_id": 140,
+      "anchor": "Oral",
+      "station_name": "Oral North",
+      "lat": 51.51,
+      "lon": 51.37,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 141,
+      "anchor": "Oral",
+      "station_name": "Oral East",
+      "lat": 51.23,
+      "lon": 51.72,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 142,
+      "anchor": "Oral",
+      "station_name": "Oral South",
+      "lat": 50.95,
+      "lon": 51.37,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 143,
+      "anchor": "Shalkar",
+      "station_name": "Shalkar Central",
+      "lat": 47.83,
+      "lon": 59.62,
+      "kind": "hub"
+    },
+    {
+      "station_id": 144,
+      "anchor": "Shalkar",
+      "station_name": "Shalkar North",
+      "lat": 48.11,
+      "lon": 59.62,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 145,
+      "anchor": "Shalkar",
+      "station_name": "Shalkar East",
+      "lat": 47.83,
+      "lon": 59.97,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 146,
+      "anchor": "Shalkar",
+      "station_name": "Shalkar South",
+      "lat": 47.55,
+      "lon": 59.62,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 147,
+      "anchor": "Makat",
+      "station_name": "Makat Central",
+      "lat": 47.65,
+      "lon": 53.35,
+      "kind": "hub"
+    },
+    {
+      "station_id": 148,
+      "anchor": "Makat",
+      "station_name": "Makat North",
+      "lat": 47.93,
+      "lon": 53.35,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 149,
+      "anchor": "Makat",
+      "station_name": "Makat East",
+      "lat": 47.65,
+      "lon": 53.7,
+      "kind": "synthetic"
+    },
+    {
+      "station_id": 150,
+      "anchor": "Makat",
+      "station_name": "Makat South",
+      "lat": 47.37,
+      "lon": 53.35,
+      "kind": "synthetic"
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": 1,
+      "from_station": "Petropavl Central",
+      "to_station": "Petropavl North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 2,
+      "from_station": "Petropavl Central",
+      "to_station": "Petropavl East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 3,
+      "from_station": "Petropavl Central",
+      "to_station": "Petropavl South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 4,
+      "from_station": "Petropavl North",
+      "to_station": "Petropavl East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 5,
+      "from_station": "Petropavl East",
+      "to_station": "Petropavl South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 6,
+      "from_station": "Kostanay Central",
+      "to_station": "Kostanay North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 7,
+      "from_station": "Kostanay Central",
+      "to_station": "Kostanay East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 8,
+      "from_station": "Kostanay Central",
+      "to_station": "Kostanay South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 9,
+      "from_station": "Kostanay North",
+      "to_station": "Kostanay East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 10,
+      "from_station": "Kostanay East",
+      "to_station": "Kostanay South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 11,
+      "from_station": "Rudny Central",
+      "to_station": "Rudny North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 12,
+      "from_station": "Rudny Central",
+      "to_station": "Rudny East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 13,
+      "from_station": "Rudny Central",
+      "to_station": "Rudny South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 14,
+      "from_station": "Rudny North",
+      "to_station": "Rudny East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 15,
+      "from_station": "Rudny East",
+      "to_station": "Rudny South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 16,
+      "from_station": "Kokshetau Central",
+      "to_station": "Kokshetau North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 17,
+      "from_station": "Kokshetau Central",
+      "to_station": "Kokshetau East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 18,
+      "from_station": "Kokshetau Central",
+      "to_station": "Kokshetau South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 19,
+      "from_station": "Kokshetau North",
+      "to_station": "Kokshetau East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 20,
+      "from_station": "Kokshetau East",
+      "to_station": "Kokshetau South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 21,
+      "from_station": "Astana Central",
+      "to_station": "Astana North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 22,
+      "from_station": "Astana Central",
+      "to_station": "Astana East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 23,
+      "from_station": "Astana Central",
+      "to_station": "Astana South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 24,
+      "from_station": "Astana Central",
+      "to_station": "Astana West",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 25,
+      "from_station": "Astana Central",
+      "to_station": "Astana Junction",
+      "edge_type": "local",
+      "approx_km": 24.6
+    },
+    {
+      "edge_id": 26,
+      "from_station": "Astana North",
+      "to_station": "Astana East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 27,
+      "from_station": "Astana East",
+      "to_station": "Astana South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 28,
+      "from_station": "Astana South",
+      "to_station": "Astana West",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 29,
+      "from_station": "Astana West",
+      "to_station": "Astana Junction",
+      "edge_type": "local",
+      "approx_km": 50.0
+    },
+    {
+      "edge_id": 30,
+      "from_station": "Atbasar Central",
+      "to_station": "Atbasar North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 31,
+      "from_station": "Atbasar Central",
+      "to_station": "Atbasar East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 32,
+      "from_station": "Atbasar Central",
+      "to_station": "Atbasar South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 33,
+      "from_station": "Atbasar North",
+      "to_station": "Atbasar East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 34,
+      "from_station": "Atbasar East",
+      "to_station": "Atbasar South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 35,
+      "from_station": "Pavlodar Central",
+      "to_station": "Pavlodar North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 36,
+      "from_station": "Pavlodar Central",
+      "to_station": "Pavlodar East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 37,
+      "from_station": "Pavlodar Central",
+      "to_station": "Pavlodar South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 38,
+      "from_station": "Pavlodar North",
+      "to_station": "Pavlodar East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 39,
+      "from_station": "Pavlodar East",
+      "to_station": "Pavlodar South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 40,
+      "from_station": "Ekibastuz Central",
+      "to_station": "Ekibastuz North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 41,
+      "from_station": "Ekibastuz Central",
+      "to_station": "Ekibastuz East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 42,
+      "from_station": "Ekibastuz Central",
+      "to_station": "Ekibastuz South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 43,
+      "from_station": "Ekibastuz North",
+      "to_station": "Ekibastuz East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 44,
+      "from_station": "Ekibastuz East",
+      "to_station": "Ekibastuz South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 45,
+      "from_station": "Karaganda Central",
+      "to_station": "Karaganda North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 46,
+      "from_station": "Karaganda Central",
+      "to_station": "Karaganda East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 47,
+      "from_station": "Karaganda Central",
+      "to_station": "Karaganda South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 48,
+      "from_station": "Karaganda Central",
+      "to_station": "Karaganda West",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 49,
+      "from_station": "Karaganda Central",
+      "to_station": "Karaganda Junction",
+      "edge_type": "local",
+      "approx_km": 24.6
+    },
+    {
+      "edge_id": 50,
+      "from_station": "Karaganda North",
+      "to_station": "Karaganda East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 51,
+      "from_station": "Karaganda East",
+      "to_station": "Karaganda South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 52,
+      "from_station": "Karaganda South",
+      "to_station": "Karaganda West",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 53,
+      "from_station": "Karaganda West",
+      "to_station": "Karaganda Junction",
+      "edge_type": "local",
+      "approx_km": 50.0
+    },
+    {
+      "edge_id": 54,
+      "from_station": "Temirtau Central",
+      "to_station": "Temirtau North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 55,
+      "from_station": "Temirtau Central",
+      "to_station": "Temirtau East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 56,
+      "from_station": "Temirtau Central",
+      "to_station": "Temirtau South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 57,
+      "from_station": "Temirtau North",
+      "to_station": "Temirtau East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 58,
+      "from_station": "Temirtau East",
+      "to_station": "Temirtau South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 59,
+      "from_station": "Jezkazgan Central",
+      "to_station": "Jezkazgan North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 60,
+      "from_station": "Jezkazgan Central",
+      "to_station": "Jezkazgan East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 61,
+      "from_station": "Jezkazgan Central",
+      "to_station": "Jezkazgan South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 62,
+      "from_station": "Jezkazgan North",
+      "to_station": "Jezkazgan East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 63,
+      "from_station": "Jezkazgan East",
+      "to_station": "Jezkazgan South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 64,
+      "from_station": "Balkhash Central",
+      "to_station": "Balkhash North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 65,
+      "from_station": "Balkhash Central",
+      "to_station": "Balkhash East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 66,
+      "from_station": "Balkhash Central",
+      "to_station": "Balkhash South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 67,
+      "from_station": "Balkhash North",
+      "to_station": "Balkhash East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 68,
+      "from_station": "Balkhash East",
+      "to_station": "Balkhash South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 69,
+      "from_station": "Semey Central",
+      "to_station": "Semey North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 70,
+      "from_station": "Semey Central",
+      "to_station": "Semey East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 71,
+      "from_station": "Semey Central",
+      "to_station": "Semey South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 72,
+      "from_station": "Semey North",
+      "to_station": "Semey East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 73,
+      "from_station": "Semey East",
+      "to_station": "Semey South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 74,
+      "from_station": "Oskemen Central",
+      "to_station": "Oskemen North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 75,
+      "from_station": "Oskemen Central",
+      "to_station": "Oskemen East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 76,
+      "from_station": "Oskemen Central",
+      "to_station": "Oskemen South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 77,
+      "from_station": "Oskemen North",
+      "to_station": "Oskemen East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 78,
+      "from_station": "Oskemen East",
+      "to_station": "Oskemen South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 79,
+      "from_station": "Ayagoz Central",
+      "to_station": "Ayagoz North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 80,
+      "from_station": "Ayagoz Central",
+      "to_station": "Ayagoz East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 81,
+      "from_station": "Ayagoz Central",
+      "to_station": "Ayagoz South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 82,
+      "from_station": "Ayagoz North",
+      "to_station": "Ayagoz East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 83,
+      "from_station": "Ayagoz East",
+      "to_station": "Ayagoz South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 84,
+      "from_station": "Almaty Central",
+      "to_station": "Almaty North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 85,
+      "from_station": "Almaty Central",
+      "to_station": "Almaty East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 86,
+      "from_station": "Almaty Central",
+      "to_station": "Almaty South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 87,
+      "from_station": "Almaty Central",
+      "to_station": "Almaty West",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 88,
+      "from_station": "Almaty Central",
+      "to_station": "Almaty Junction",
+      "edge_type": "local",
+      "approx_km": 24.6
+    },
+    {
+      "edge_id": 89,
+      "from_station": "Almaty North",
+      "to_station": "Almaty East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 90,
+      "from_station": "Almaty East",
+      "to_station": "Almaty South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 91,
+      "from_station": "Almaty South",
+      "to_station": "Almaty West",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 92,
+      "from_station": "Almaty West",
+      "to_station": "Almaty Junction",
+      "edge_type": "local",
+      "approx_km": 50.0
+    },
+    {
+      "edge_id": 93,
+      "from_station": "Taldykorgan Central",
+      "to_station": "Taldykorgan North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 94,
+      "from_station": "Taldykorgan Central",
+      "to_station": "Taldykorgan East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 95,
+      "from_station": "Taldykorgan Central",
+      "to_station": "Taldykorgan South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 96,
+      "from_station": "Taldykorgan North",
+      "to_station": "Taldykorgan East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 97,
+      "from_station": "Taldykorgan East",
+      "to_station": "Taldykorgan South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 98,
+      "from_station": "Saryozek Central",
+      "to_station": "Saryozek North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 99,
+      "from_station": "Saryozek Central",
+      "to_station": "Saryozek East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 100,
+      "from_station": "Saryozek Central",
+      "to_station": "Saryozek South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 101,
+      "from_station": "Saryozek North",
+      "to_station": "Saryozek East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 102,
+      "from_station": "Saryozek East",
+      "to_station": "Saryozek South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 103,
+      "from_station": "Shu Central",
+      "to_station": "Shu North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 104,
+      "from_station": "Shu Central",
+      "to_station": "Shu East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 105,
+      "from_station": "Shu Central",
+      "to_station": "Shu South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 106,
+      "from_station": "Shu North",
+      "to_station": "Shu East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 107,
+      "from_station": "Shu East",
+      "to_station": "Shu South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 108,
+      "from_station": "Taraz Central",
+      "to_station": "Taraz North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 109,
+      "from_station": "Taraz Central",
+      "to_station": "Taraz East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 110,
+      "from_station": "Taraz Central",
+      "to_station": "Taraz South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 111,
+      "from_station": "Taraz North",
+      "to_station": "Taraz East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 112,
+      "from_station": "Taraz East",
+      "to_station": "Taraz South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 113,
+      "from_station": "Shymkent Central",
+      "to_station": "Shymkent North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 114,
+      "from_station": "Shymkent Central",
+      "to_station": "Shymkent East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 115,
+      "from_station": "Shymkent Central",
+      "to_station": "Shymkent South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 116,
+      "from_station": "Shymkent Central",
+      "to_station": "Shymkent West",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 117,
+      "from_station": "Shymkent Central",
+      "to_station": "Shymkent Junction",
+      "edge_type": "local",
+      "approx_km": 24.6
+    },
+    {
+      "edge_id": 118,
+      "from_station": "Shymkent North",
+      "to_station": "Shymkent East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 119,
+      "from_station": "Shymkent East",
+      "to_station": "Shymkent South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 120,
+      "from_station": "Shymkent South",
+      "to_station": "Shymkent West",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 121,
+      "from_station": "Shymkent West",
+      "to_station": "Shymkent Junction",
+      "edge_type": "local",
+      "approx_km": 50.0
+    },
+    {
+      "edge_id": 122,
+      "from_station": "Turkistan Central",
+      "to_station": "Turkistan North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 123,
+      "from_station": "Turkistan Central",
+      "to_station": "Turkistan East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 124,
+      "from_station": "Turkistan Central",
+      "to_station": "Turkistan South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 125,
+      "from_station": "Turkistan North",
+      "to_station": "Turkistan East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 126,
+      "from_station": "Turkistan East",
+      "to_station": "Turkistan South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 127,
+      "from_station": "Kyzylorda Central",
+      "to_station": "Kyzylorda North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 128,
+      "from_station": "Kyzylorda Central",
+      "to_station": "Kyzylorda East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 129,
+      "from_station": "Kyzylorda Central",
+      "to_station": "Kyzylorda South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 130,
+      "from_station": "Kyzylorda North",
+      "to_station": "Kyzylorda East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 131,
+      "from_station": "Kyzylorda East",
+      "to_station": "Kyzylorda South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 132,
+      "from_station": "Baikonur Central",
+      "to_station": "Baikonur North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 133,
+      "from_station": "Baikonur Central",
+      "to_station": "Baikonur East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 134,
+      "from_station": "Baikonur Central",
+      "to_station": "Baikonur South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 135,
+      "from_station": "Baikonur North",
+      "to_station": "Baikonur East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 136,
+      "from_station": "Baikonur East",
+      "to_station": "Baikonur South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 137,
+      "from_station": "Aral Central",
+      "to_station": "Aral North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 138,
+      "from_station": "Aral Central",
+      "to_station": "Aral East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 139,
+      "from_station": "Aral Central",
+      "to_station": "Aral South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 140,
+      "from_station": "Aral North",
+      "to_station": "Aral East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 141,
+      "from_station": "Aral East",
+      "to_station": "Aral South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 142,
+      "from_station": "Aktobe Central",
+      "to_station": "Aktobe North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 143,
+      "from_station": "Aktobe Central",
+      "to_station": "Aktobe East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 144,
+      "from_station": "Aktobe Central",
+      "to_station": "Aktobe South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 145,
+      "from_station": "Aktobe Central",
+      "to_station": "Aktobe West",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 146,
+      "from_station": "Aktobe Central",
+      "to_station": "Aktobe Junction",
+      "edge_type": "local",
+      "approx_km": 24.6
+    },
+    {
+      "edge_id": 147,
+      "from_station": "Aktobe North",
+      "to_station": "Aktobe East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 148,
+      "from_station": "Aktobe East",
+      "to_station": "Aktobe South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 149,
+      "from_station": "Aktobe South",
+      "to_station": "Aktobe West",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 150,
+      "from_station": "Aktobe West",
+      "to_station": "Aktobe Junction",
+      "edge_type": "local",
+      "approx_km": 50.0
+    },
+    {
+      "edge_id": 151,
+      "from_station": "Kandyagash Central",
+      "to_station": "Kandyagash North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 152,
+      "from_station": "Kandyagash Central",
+      "to_station": "Kandyagash East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 153,
+      "from_station": "Kandyagash Central",
+      "to_station": "Kandyagash South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 154,
+      "from_station": "Kandyagash North",
+      "to_station": "Kandyagash East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 155,
+      "from_station": "Kandyagash East",
+      "to_station": "Kandyagash South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 156,
+      "from_station": "Atyrau Central",
+      "to_station": "Atyrau North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 157,
+      "from_station": "Atyrau Central",
+      "to_station": "Atyrau East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 158,
+      "from_station": "Atyrau Central",
+      "to_station": "Atyrau South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 159,
+      "from_station": "Atyrau North",
+      "to_station": "Atyrau East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 160,
+      "from_station": "Atyrau East",
+      "to_station": "Atyrau South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 161,
+      "from_station": "Aksaray Central",
+      "to_station": "Aksaray North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 162,
+      "from_station": "Aksaray Central",
+      "to_station": "Aksaray East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 163,
+      "from_station": "Aksaray Central",
+      "to_station": "Aksaray South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 164,
+      "from_station": "Aksaray North",
+      "to_station": "Aksaray East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 165,
+      "from_station": "Aksaray East",
+      "to_station": "Aksaray South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 166,
+      "from_station": "Aktau Central",
+      "to_station": "Aktau North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 167,
+      "from_station": "Aktau Central",
+      "to_station": "Aktau East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 168,
+      "from_station": "Aktau Central",
+      "to_station": "Aktau South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 169,
+      "from_station": "Aktau North",
+      "to_station": "Aktau East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 170,
+      "from_station": "Aktau East",
+      "to_station": "Aktau South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 171,
+      "from_station": "Zhanaozen Central",
+      "to_station": "Zhanaozen North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 172,
+      "from_station": "Zhanaozen Central",
+      "to_station": "Zhanaozen East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 173,
+      "from_station": "Zhanaozen Central",
+      "to_station": "Zhanaozen South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 174,
+      "from_station": "Zhanaozen North",
+      "to_station": "Zhanaozen East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 175,
+      "from_station": "Zhanaozen East",
+      "to_station": "Zhanaozen South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 176,
+      "from_station": "Beyneu Central",
+      "to_station": "Beyneu North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 177,
+      "from_station": "Beyneu Central",
+      "to_station": "Beyneu East",
+      "edge_type": "local",
+      "approx_km": 29.7
+    },
+    {
+      "edge_id": 178,
+      "from_station": "Beyneu Central",
+      "to_station": "Beyneu South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 179,
+      "from_station": "Beyneu North",
+      "to_station": "Beyneu East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 180,
+      "from_station": "Beyneu East",
+      "to_station": "Beyneu South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 181,
+      "from_station": "Oral Central",
+      "to_station": "Oral North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 182,
+      "from_station": "Oral Central",
+      "to_station": "Oral East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 183,
+      "from_station": "Oral Central",
+      "to_station": "Oral South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 184,
+      "from_station": "Oral North",
+      "to_station": "Oral East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 185,
+      "from_station": "Oral East",
+      "to_station": "Oral South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 186,
+      "from_station": "Shalkar Central",
+      "to_station": "Shalkar North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 187,
+      "from_station": "Shalkar Central",
+      "to_station": "Shalkar East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 188,
+      "from_station": "Shalkar Central",
+      "to_station": "Shalkar South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 189,
+      "from_station": "Shalkar North",
+      "to_station": "Shalkar East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 190,
+      "from_station": "Shalkar East",
+      "to_station": "Shalkar South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 191,
+      "from_station": "Makat Central",
+      "to_station": "Makat North",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 192,
+      "from_station": "Makat Central",
+      "to_station": "Makat East",
+      "edge_type": "local",
+      "approx_km": 29.8
+    },
+    {
+      "edge_id": 193,
+      "from_station": "Makat Central",
+      "to_station": "Makat South",
+      "edge_type": "local",
+      "approx_km": 31.1
+    },
+    {
+      "edge_id": 194,
+      "from_station": "Makat North",
+      "to_station": "Makat East",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 195,
+      "from_station": "Makat East",
+      "to_station": "Makat South",
+      "edge_type": "local",
+      "approx_km": 43.0
+    },
+    {
+      "edge_id": 196,
+      "from_station": "Oral Central",
+      "to_station": "Atyrau Central",
+      "edge_type": "corridor",
+      "approx_km": 460.8
+    },
+    {
+      "edge_id": 197,
+      "from_station": "Atyrau Central",
+      "to_station": "Makat Central",
+      "edge_type": "corridor",
+      "approx_km": 136.0
+    },
+    {
+      "edge_id": 198,
+      "from_station": "Makat Central",
+      "to_station": "Beyneu Central",
+      "edge_type": "corridor",
+      "approx_km": 302.7
+    },
+    {
+      "edge_id": 199,
+      "from_station": "Beyneu Central",
+      "to_station": "Aktau Central",
+      "edge_type": "corridor",
+      "approx_km": 387.2
+    },
+    {
+      "edge_id": 200,
+      "from_station": "Beyneu Central",
+      "to_station": "Zhanaozen Central",
+      "edge_type": "corridor",
+      "approx_km": 296.4
+    },
+    {
+      "edge_id": 201,
+      "from_station": "Aktobe Central",
+      "to_station": "Kandyagash Central",
+      "edge_type": "corridor",
+      "approx_km": 92.6
+    },
+    {
+      "edge_id": 202,
+      "from_station": "Kandyagash Central",
+      "to_station": "Shalkar Central",
+      "edge_type": "corridor",
+      "approx_km": 260.4
+    },
+    {
+      "edge_id": 203,
+      "from_station": "Shalkar Central",
+      "to_station": "Aral Central",
+      "edge_type": "corridor",
+      "approx_km": 208.4
+    },
+    {
+      "edge_id": 204,
+      "from_station": "Aral Central",
+      "to_station": "Kyzylorda Central",
+      "edge_type": "corridor",
+      "approx_km": 391.6
+    },
+    {
+      "edge_id": 205,
+      "from_station": "Kyzylorda Central",
+      "to_station": "Turkistan Central",
+      "edge_type": "corridor",
+      "approx_km": 290.9
+    },
+    {
+      "edge_id": 206,
+      "from_station": "Turkistan Central",
+      "to_station": "Shymkent Central",
+      "edge_type": "corridor",
+      "approx_km": 156.3
+    },
+    {
+      "edge_id": 207,
+      "from_station": "Shymkent Central",
+      "to_station": "Taraz Central",
+      "edge_type": "corridor",
+      "approx_km": 164.4
+    },
+    {
+      "edge_id": 208,
+      "from_station": "Taraz Central",
+      "to_station": "Shu Central",
+      "edge_type": "corridor",
+      "approx_km": 217.5
+    },
+    {
+      "edge_id": 209,
+      "from_station": "Shu Central",
+      "to_station": "Almaty Central",
+      "edge_type": "corridor",
+      "approx_km": 271.6
+    },
+    {
+      "edge_id": 210,
+      "from_station": "Kyzylorda Central",
+      "to_station": "Baikonur Central",
+      "edge_type": "corridor",
+      "approx_km": 204.4
+    },
+    {
+      "edge_id": 211,
+      "from_station": "Petropavl Central",
+      "to_station": "Kokshetau Central",
+      "edge_type": "corridor",
+      "approx_km": 176.6
+    },
+    {
+      "edge_id": 212,
+      "from_station": "Kokshetau Central",
+      "to_station": "Astana Central",
+      "edge_type": "corridor",
+      "approx_km": 293.3
+    },
+    {
+      "edge_id": 213,
+      "from_station": "Astana Central",
+      "to_station": "Karaganda Central",
+      "edge_type": "corridor",
+      "approx_km": 207.4
+    },
+    {
+      "edge_id": 214,
+      "from_station": "Karaganda Central",
+      "to_station": "Balkhash Central",
+      "edge_type": "corridor",
+      "approx_km": 364.0
+    },
+    {
+      "edge_id": 215,
+      "from_station": "Balkhash Central",
+      "to_station": "Saryozek Central",
+      "edge_type": "corridor",
+      "approx_km": 376.1
+    },
+    {
+      "edge_id": 216,
+      "from_station": "Saryozek Central",
+      "to_station": "Almaty Central",
+      "edge_type": "corridor",
+      "approx_km": 153.5
+    },
+    {
+      "edge_id": 217,
+      "from_station": "Kostanay Central",
+      "to_station": "Atbasar Central",
+      "edge_type": "corridor",
+      "approx_km": 431.8
+    },
+    {
+      "edge_id": 218,
+      "from_station": "Atbasar Central",
+      "to_station": "Astana Central",
+      "edge_type": "corridor",
+      "approx_km": 271.8
+    },
+    {
+      "edge_id": 219,
+      "from_station": "Kokshetau Central",
+      "to_station": "Kostanay Central",
+      "edge_type": "corridor",
+      "approx_km": 489.7
+    },
+    {
+      "edge_id": 220,
+      "from_station": "Astana Central",
+      "to_station": "Ekibastuz Central",
+      "edge_type": "corridor",
+      "approx_km": 334.8
+    },
+    {
+      "edge_id": 221,
+      "from_station": "Ekibastuz Central",
+      "to_station": "Pavlodar Central",
+      "edge_type": "corridor",
+      "approx_km": 153.4
+    },
+    {
+      "edge_id": 222,
+      "from_station": "Pavlodar Central",
+      "to_station": "Semey Central",
+      "edge_type": "corridor",
+      "approx_km": 346.9
+    },
+    {
+      "edge_id": 223,
+      "from_station": "Semey Central",
+      "to_station": "Oskemen Central",
+      "edge_type": "corridor",
+      "approx_km": 208.1
+    },
+    {
+      "edge_id": 224,
+      "from_station": "Karaganda Central",
+      "to_station": "Temirtau Central",
+      "edge_type": "corridor",
+      "approx_km": 30.5
+    },
+    {
+      "edge_id": 225,
+      "from_station": "Temirtau Central",
+      "to_station": "Astana Central",
+      "edge_type": "corridor",
+      "approx_km": 178.7
+    },
+    {
+      "edge_id": 226,
+      "from_station": "Karaganda Central",
+      "to_station": "Jezkazgan Central",
+      "edge_type": "corridor",
+      "approx_km": 509.9
+    },
+    {
+      "edge_id": 227,
+      "from_station": "Semey Central",
+      "to_station": "Ayagoz Central",
+      "edge_type": "corridor",
+      "approx_km": 272.5
+    },
+    {
+      "edge_id": 228,
+      "from_station": "Ayagoz Central",
+      "to_station": "Almaty Central",
+      "edge_type": "corridor",
+      "approx_km": 602.9
+    },
+    {
+      "edge_id": 229,
+      "from_station": "Taldykorgan Central",
+      "to_station": "Saryozek Central",
+      "edge_type": "corridor",
+      "approx_km": 79.4
+    },
+    {
+      "edge_id": 230,
+      "from_station": "Taldykorgan Central",
+      "to_station": "Ayagoz Central",
+      "edge_type": "corridor",
+      "approx_km": 371.3
+    },
+    {
+      "edge_id": 231,
+      "from_station": "Aktobe Central",
+      "to_station": "Oral Central",
+      "edge_type": "corridor",
+      "approx_km": 504.2
+    },
+    {
+      "edge_id": 232,
+      "from_station": "Atyrau Central",
+      "to_station": "Aktobe Central",
+      "edge_type": "corridor",
+      "approx_km": 569.0
+    },
+    {
+      "edge_id": 233,
+      "from_station": "Ekibastuz Central",
+      "to_station": "Karaganda Central",
+      "edge_type": "corridor",
+      "approx_km": 284.9
+    },
+    {
+      "edge_id": 234,
+      "from_station": "Astana East",
+      "to_station": "Kokshetau South",
+      "edge_type": "express",
+      "approx_km": 289.3
+    },
+    {
+      "edge_id": 235,
+      "from_station": "Astana South",
+      "to_station": "Karaganda North",
+      "edge_type": "express",
+      "approx_km": 167.3
+    },
+    {
+      "edge_id": 236,
+      "from_station": "Karaganda East",
+      "to_station": "Balkhash East",
+      "edge_type": "express",
+      "approx_km": 364.0
+    },
+    {
+      "edge_id": 237,
+      "from_station": "Balkhash East",
+      "to_station": "Ayagoz East",
+      "edge_type": "express",
+      "approx_km": 479.4
+    },
+    {
+      "edge_id": 238,
+      "from_station": "Shymkent North",
+      "to_station": "Turkistan South",
+      "edge_type": "express",
+      "approx_km": 121.5
+    },
+    {
+      "edge_id": 239,
+      "from_station": "Shymkent East",
+      "to_station": "Taraz East",
+      "edge_type": "express",
+      "approx_km": 164.4
+    },
+    {
+      "edge_id": 240,
+      "from_station": "Taraz East",
+      "to_station": "Shu East",
+      "edge_type": "express",
+      "approx_km": 217.5
+    },
+    {
+      "edge_id": 241,
+      "from_station": "Almaty North",
+      "to_station": "Taldykorgan South",
+      "edge_type": "express",
+      "approx_km": 182.3
+    },
+    {
+      "edge_id": 242,
+      "from_station": "Aktobe North",
+      "to_station": "Kostanay South",
+      "edge_type": "express",
+      "approx_km": 609.3
+    },
+    {
+      "edge_id": 243,
+      "from_station": "Atyrau North",
+      "to_station": "Oral South",
+      "edge_type": "express",
+      "approx_km": 399.0
+    },
+    {
+      "edge_id": 244,
+      "from_station": "Beyneu East",
+      "to_station": "Aral East",
+      "edge_type": "express",
+      "approx_km": 574.0
+    }
+  ]
+}

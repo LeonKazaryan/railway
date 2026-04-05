@@ -1,8 +1,13 @@
 import { ExternalLink, AlertTriangle, Info, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Alert } from "@/entities/alert/model/types";
-import { ALERT_SEVERITY_STYLE } from "@/entities/alert/model/mock";
 import { cn } from "@/shared/lib/cn";
+
+const ALERT_SEVERITY_STYLE = {
+  critical: { color: "#f43f5e", bgColor: "rgba(244,63,94,0.12)" },
+  warning: { color: "#f59e0b", bgColor: "rgba(245,158,11,0.10)" },
+  info: { color: "#38bdf8", bgColor: "rgba(56,189,248,0.08)" },
+} as const;
 
 const SEVERITY_ICONS = {
   critical: Zap,
@@ -20,14 +25,19 @@ interface AlertCardProps {
   alert: Alert;
   isSelected?: boolean;
   onSelect?: (id: string) => void;
+  onNavigate?: () => void;
 }
 
-export function AlertCard({ alert, isSelected, onSelect }: AlertCardProps) {
+export function AlertCard({ alert, isSelected, onSelect, onNavigate }: AlertCardProps) {
   const { t } = useTranslation();
   const cfg = ALERT_SEVERITY_STYLE[alert.severity];
   const Icon = SEVERITY_ICONS[alert.severity];
-  const description = t(`alerts.mock.${alert.messageKey}.description`);
-  const suggested = t(`alerts.mock.${alert.messageKey}.suggested`);
+
+  const problemMain = alert.faultCode
+    ? t(`faultCodes.${alert.faultCode}`, { defaultValue: alert.faultCode })
+    : alert.problemI18nKey
+      ? t(alert.problemI18nKey)
+      : alert.problemLine;
 
   return (
     <div
@@ -81,31 +91,26 @@ export function AlertCard({ alert, isSelected, onSelect }: AlertCardProps) {
         </div>
 
         <div
-          className="text-xs font-bold"
+          className="text-xs font-bold leading-snug"
           style={{ color: "var(--text-primary)" }}
         >
-          {alert.trainId}
+          {problemMain}
         </div>
 
         <div
           className="text-[10px] leading-tight"
           style={{ color: "var(--text-secondary)" }}
         >
-          {description}
+          {alert.metaLine}
         </div>
-
-        {suggested ? (
-          <div
-            className="text-[9px] leading-tight mt-0.5"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {t("alerts.suggestedLine", { action: suggested })}
-          </div>
-        ) : null}
 
         {alert.severity !== "info" && (
           <button
             type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate?.();
+            }}
             className="mt-1 flex items-center gap-1 text-[9px] font-semibold px-2 py-1 rounded self-start transition-all hover:opacity-80"
             style={{
               backgroundColor: cfg.color + "18",

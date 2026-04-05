@@ -43,7 +43,7 @@ export function TwinHeader({ train, activeTab, onTabChange }: TwinHeaderProps) {
           className="text-base font-bold font-mono tracking-wide shrink-0"
           style={{ color: "var(--text-primary)" }}
         >
-          {train.id}
+          {train.label}
         </span>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {t(`trainModels.${train.model}`)}

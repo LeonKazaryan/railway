@@ -1,7 +1,7 @@
 export const TWIN_TAB_KEYS = [
   "overview",
   "systems",
-  "telemetry",
+  "route",
   "events",
   "config",
 ] as const;
