@@ -283,11 +283,13 @@ export function useFleetStats() {
   return stats;
 }
 
-export function useTopRiskTrains() {
-  const [rows, setRows] = useState(computeTopRiskRows);
+export function useTopRiskTrains(limit: number) {
+  const [rows, setRows] = useState(() =>
+    computeTopRiskRows().slice(0, limit),
+  );
   useEffect(() => {
     let tid: ReturnType<typeof setTimeout> | undefined;
-    const flush = () => setRows(computeTopRiskRows());
+    const flush = () => setRows(computeTopRiskRows().slice(0, limit));
     const unsub = useFleetLiveStore.subscribe(() => {
       if (tid) clearTimeout(tid);
       tid = setTimeout(flush, FLEET_UI_DEBOUNCE_MS);
@@ -297,7 +299,7 @@ export function useTopRiskTrains() {
       unsub();
       if (tid) clearTimeout(tid);
     };
-  }, []);
+  }, [limit]);
   return rows;
 }
 
@@ -324,9 +326,10 @@ export function useFleetTrainsMapDebounced(
   return trains;
 }
 
-interface LiveEvent {
+export interface LiveEvent {
   time: string;
-  trainId: string;
+  locomotiveId: string;
+  trainLabel: string;
   level: "critical" | "warning" | "info";
 }
 
@@ -338,13 +341,14 @@ export function pushLiveEvent(ws: WsTrainState) {
   if (st === "normal") return;
   eventBuffer.unshift({
     time: formatTime(ws.ts),
-    trainId: ws.trainId ?? ws.locomotiveId,
+    locomotiveId: ws.locomotiveId,
+    trainLabel: ws.trainId ?? ws.serialNumber ?? ws.locomotiveId,
     level: st === "no_signal" ? "info" : st,
   });
   if (eventBuffer.length > MAX_EVENTS) eventBuffer.length = MAX_EVENTS;
 }
 
-export function useLiveEvents() {
+export function useLiveEvents(maxCount: number) {
   const [, bump] = useState(0);
   useEffect(() => {
     let tid: ReturnType<typeof setTimeout> | undefined;
@@ -356,8 +360,8 @@ export function useLiveEvents() {
       unsub();
       if (tid) clearTimeout(tid);
     };
-  }, []);
-  return eventBuffer.slice(0, 5);
+  }, [maxCount]);
+  return eventBuffer.slice(0, maxCount);
 }
 
 export function useWsTrainState(locomotiveId: string): WsTrainState | undefined {

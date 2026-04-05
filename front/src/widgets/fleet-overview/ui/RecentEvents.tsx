@@ -7,13 +7,21 @@ const LEVEL_KEYS = {
   info: "recentEvents.info" as const,
 };
 
-export function RecentEvents() {
+interface RecentEventsProps {
+  limit: number;
+  onSelectTrain: (locomotiveId: string) => void;
+}
+
+export function RecentEvents({ limit, onSelectTrain }: RecentEventsProps) {
   const { t } = useTranslation();
-  const events = useLiveEvents();
+  const events = useLiveEvents(limit);
 
   if (events.length === 0) {
     return (
-      <div className="px-2 py-3 text-center text-[10px]" style={{ color: "var(--text-muted)" }}>
+      <div
+        className="px-2 py-3 text-center text-[10px]"
+        style={{ color: "var(--text-muted)" }}
+      >
         —
       </div>
     );
@@ -29,9 +37,11 @@ export function RecentEvents() {
               ? "var(--warning)"
               : "var(--info)";
         return (
-          <div
-            key={idx}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-[var(--bg-panel)] transition-colors"
+          <button
+            key={`${event.locomotiveId}-${event.time}-${idx}`}
+            type="button"
+            onClick={() => onSelectTrain(event.locomotiveId)}
+            className="flex w-full items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer text-left hover:bg-[var(--bg-panel)] transition-colors"
           >
             <span
               className="text-[10px] font-mono tabular-nums w-10 shrink-0"
@@ -43,10 +53,10 @@ export function RecentEvents() {
               className="text-xs font-semibold flex-1 truncate"
               style={{ color: "var(--text-primary)" }}
             >
-              {event.trainId}
+              {event.trainLabel}
             </span>
             <span
-              className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
               style={{
                 color,
                 backgroundColor: `${color}15`,
@@ -54,7 +64,7 @@ export function RecentEvents() {
             >
               {t(LEVEL_KEYS[event.level])}
             </span>
-          </div>
+          </button>
         );
       })}
     </div>
