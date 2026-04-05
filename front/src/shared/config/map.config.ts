@@ -8,6 +8,7 @@ const stadiaQs =
 
 export const MAP_STYLE_LIGHT = `https://tiles.stadiamaps.com/styles/alidade_smooth.json${stadiaQs}`;
 export const MAP_STYLE_DARK = `https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json${stadiaQs}`;
+export const MAP_STYLE_SATELLITE = `https://tiles.stadiamaps.com/styles/alidade_satellite.json${stadiaQs}`;
 
 export const MAP_CONFIG = {
   center: [67.5, 48.0] as [number, number],

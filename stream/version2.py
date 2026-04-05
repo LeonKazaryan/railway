@@ -1704,8 +1704,12 @@ class LocomotiveRuntime:
             self.tractive_effort_kn = 0.0
             self.dynamic_brake_force_kn = 0.0
             self.brake_cylinder_pressure_kpa = jitter(250.0, 10)
-            self.traction_voltage_v = 0.0
-            self.current_a = 0.0
+            idle_rpm = max(1.0, self.engine_rpm)
+            idle_frac = clamp(idle_rpm / 950.0, 0.0, 1.0)
+            self.traction_voltage_v = jitter(
+                lerp(140.0, 420.0, idle_frac * 0.35), 12.0
+            )
+            self.current_a = jitter(lerp(28.0, 110.0, idle_frac * 0.4), 10.0)
             self.fuel_consumption_rate_lph = jitter(20.0, 3)
             self.brake_status = "release"
 
