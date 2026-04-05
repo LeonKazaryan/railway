@@ -81,9 +81,16 @@ export const en = {
   },
   weather: {
     title: "Weather",
+    clear: "Clear",
     cloudy: "Cloudy",
+    rain: "Rain",
+    snow: "Snow",
+    showers: "Showers",
+    thunderstorm: "Thunderstorm",
+    unknown: "Unknown",
     wind: "Wind",
     windValue: "Wind {{value}} km/h",
+    loadError: "Couldn't load weather",
   },
   network: {
     title: "Network Status",

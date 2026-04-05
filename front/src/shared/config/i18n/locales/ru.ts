@@ -81,9 +81,16 @@ export const ru = {
   },
   weather: {
     title: "Погода",
+    clear: "Ясно",
     cloudy: "Облачно",
+    rain: "Дождь",
+    snow: "Снег",
+    showers: "Ливни",
+    thunderstorm: "Гроза",
+    unknown: "Неизвестно",
     wind: "Ветер",
     windValue: "Ветер {{value}} км/ч",
+    loadError: "Не удалось загрузить погоду",
   },
   network: {
     title: "Сеть",

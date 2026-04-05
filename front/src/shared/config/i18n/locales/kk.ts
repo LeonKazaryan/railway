@@ -81,9 +81,16 @@ export const kk = {
   },
   weather: {
     title: "Ауа райы",
+    clear: "Күн ашық",
     cloudy: "Бұлтты",
+    rain: "Жаңбыр",
+    snow: "Қар",
+    showers: "Қысқа жаңбыр",
+    thunderstorm: "Найзағай",
+    unknown: "Белгісіз",
     wind: "Жел",
     windValue: "Жел {{value}} км/сағ",
+    loadError: "Ауа райы жүктелмеді",
   },
   network: {
     title: "Желі күйі",
