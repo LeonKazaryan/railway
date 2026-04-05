@@ -50,7 +50,7 @@ public class TrainController {
                 .map(r -> {
                     var t = r.getTelemetry();
                     if (t.getLat() != null && t.getLon() != null) {
-                        return new double[]{t.getLat(), t.getLon()};
+                        return new double[] { t.getLat(), t.getLon() };
                     }
                     return null;
                 })
