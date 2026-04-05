@@ -24,6 +24,8 @@ export interface WsTrainState {
   trainId: string | null;
   lineId: string | null;
   lineName: string | null;
+  originStation: string | null;
+  destinationStation: string | null;
   lat: number | null;
   lon: number | null;
   altM: number | null;

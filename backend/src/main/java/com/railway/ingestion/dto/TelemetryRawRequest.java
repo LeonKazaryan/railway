@@ -30,6 +30,8 @@ public class TelemetryRawRequest {
     private String trainId;
     private String lineId;
     private String lineName;
+    private String originStation;
+    private String destinationStation;
     private UUID trainRunId;
     private String routeId;
     private UUID geofenceId;

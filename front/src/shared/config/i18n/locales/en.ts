@@ -36,7 +36,11 @@ export const en = {
   },
   priorityFeed: {
     title: "Priority Feed",
-    filter: "Filter",
+    filterAll: "All",
+    filterCritical: "Critical",
+    filterWarning: "Warning",
+    noAlerts: "No active alerts",
+    noAlertsForFilter: "No alerts in this category",
     viewAll: "View All Alerts",
   },
   alerts: {

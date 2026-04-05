@@ -19,6 +19,8 @@ public class TrainLiveState {
     private String trainId;
     private String lineId;
     private String lineName;
+    private String originStation;
+    private String destinationStation;
 
     private Double lat;
     private Double lon;

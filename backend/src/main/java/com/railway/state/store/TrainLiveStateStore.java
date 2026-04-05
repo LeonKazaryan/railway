@@ -48,6 +48,8 @@ public class TrainLiveStateStore {
                     .trainId(request.getTrainId())
                     .lineId(request.getLineId())
                     .lineName(request.getLineName())
+                    .originStation(request.getOriginStation())
+                    .destinationStation(request.getDestinationStation())
                     .lat(request.getLat())
                     .lon(request.getLon())
                     .altM(request.getAltM())

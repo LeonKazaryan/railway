@@ -17,6 +17,8 @@ public class TrainWsMapper {
                 .trainId(state.getTrainId())
                 .lineId(state.getLineId())
                 .lineName(state.getLineName())
+                .originStation(state.getOriginStation())
+                .destinationStation(state.getDestinationStation())
                 .lat(state.getLat())
                 .lon(state.getLon())
                 .altM(state.getAltM())

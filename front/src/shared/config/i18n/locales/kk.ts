@@ -36,7 +36,11 @@ export const kk = {
   },
   priorityFeed: {
     title: "Басымдық таспа",
-    filter: "Сүзгі",
+    filterAll: "Барлығы",
+    filterCritical: "Сындарлы",
+    filterWarning: "Назар",
+    noAlerts: "Белсенді ескертулер жоқ",
+    noAlertsForFilter: "Бұл санатта ескертулер жоқ",
     viewAll: "Барлық ескертулер",
   },
   alerts: {

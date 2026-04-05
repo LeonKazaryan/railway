@@ -36,7 +36,11 @@ export const ru = {
   },
   priorityFeed: {
     title: "Приоритеты",
-    filter: "Фильтр",
+    filterAll: "Все",
+    filterCritical: "Критич.",
+    filterWarning: "Внимание",
+    noAlerts: "Нет активных алертов",
+    noAlertsForFilter: "Нет уведомлений в этой категории",
     viewAll: "Все оповещения",
   },
   alerts: {

@@ -32,11 +32,12 @@ export function AlertCard({ alert, isSelected, onSelect, onNavigate }: AlertCard
   const { t } = useTranslation();
   const cfg = ALERT_SEVERITY_STYLE[alert.severity];
   const Icon = SEVERITY_ICONS[alert.severity];
-  const description =
-    alert.description ?? t(`alerts.mock.${alert.messageKey}.description`);
-  const suggested = alert.description
-    ? undefined
-    : t(`alerts.mock.${alert.messageKey}.suggested`);
+
+  const problemMain = alert.faultCode
+    ? t(`faultCodes.${alert.faultCode}`, { defaultValue: alert.faultCode })
+    : alert.problemI18nKey
+      ? t(alert.problemI18nKey)
+      : alert.problemLine;
 
   return (
     <div
@@ -90,27 +91,18 @@ export function AlertCard({ alert, isSelected, onSelect, onNavigate }: AlertCard
         </div>
 
         <div
-          className="text-xs font-bold"
+          className="text-xs font-bold leading-snug"
           style={{ color: "var(--text-primary)" }}
         >
-          {alert.trainLabel}
+          {problemMain}
         </div>
 
         <div
           className="text-[10px] leading-tight"
           style={{ color: "var(--text-secondary)" }}
         >
-          {description}
+          {alert.metaLine}
         </div>
-
-        {suggested ? (
-          <div
-            className="text-[9px] leading-tight mt-0.5"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {t("alerts.suggestedLine", { action: suggested })}
-          </div>
-        ) : null}
 
         {alert.severity !== "info" && (
           <button

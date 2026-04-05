@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Bell, Filter, Search, Settings } from "lucide-react";
+import { Bell, Settings } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import { useFleetLayoutStore } from "@/features/fleet-layout/model/store";
 import { useNavStore, type TopNavTab } from "@/features/nav/model/store";
@@ -84,21 +84,6 @@ export function TopBar() {
           </button>
         ))}
       </nav>
-
-      <div className="flex-1 max-w-xs ml-4">
-        <div
-          className="flex items-center gap-2 px-3 h-8 rounded-lg border text-xs"
-          style={{
-            backgroundColor: "var(--bg-panel)",
-            borderColor: "var(--border-subtle)",
-            color: "var(--text-muted)",
-          }}
-        >
-          <Search size={12} />
-          <span>{t("topBar.searchPlaceholder")}</span>
-          <Filter size={11} className="ml-auto" />
-        </div>
-      </div>
 
       <div className="ml-auto flex items-center gap-4">
         <button
