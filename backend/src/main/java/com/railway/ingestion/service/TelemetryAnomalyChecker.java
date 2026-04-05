@@ -6,149 +6,118 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Проверяет строку телеметрии на аномалии по параметрам.
- * Возвращает статус "OK" если всё в норме,
- * или "ANOMALY" + перечень отклонений.
- */
 @Component
 public class TelemetryAnomalyChecker {
 
-    // ── Пороговые значения ──────────────────────────────────────
+    private static final float BRAKE_PIPE_PRESSURE_MIN_KPA = 310f;
+    private static final float BRAKE_PIPE_PRESSURE_MAX_KPA = 1750f;
 
-    private static final float SPEED_MAX_KPH = 200f;
+    private static final float MAIN_RESERVOIR_PRESSURE_MIN_KPA = 414f;
+    private static final float MAIN_RESERVOIR_PRESSURE_MAX_KPA = 1138f;
 
-    private static final float ENGINE_TEMP_WARNING_C = 100f;
-    private static final float ENGINE_TEMP_CRITICAL_C = 110f;
+    private static final float ENGINE_RPM_MAX = 1050f;
 
-    private static final float OIL_TEMP_WARNING_C = 90f;
-    private static final float OIL_TEMP_CRITICAL_C = 110f;
+    private static final float ENGINE_COOLANT_TEMP_MIN_C = 60f;
+    private static final float ENGINE_COOLANT_TEMP_MAX_C = 110f;
 
-    private static final float BRAKE_PIPE_PRESSURE_WARNING_KPA = 200f;
-    private static final float BRAKE_PIPE_PRESSURE_CRITICAL_KPA = 150f;
+    private static final float OIL_TEMP_MIN_C = 70f;
+    private static final float OIL_TEMP_MAX_C = 110f;
 
-    private static final float BRAKE_PIPE_LEAK_WARNING_KPA_MIN = 5f;
+    private static final float ALERTER_TIMER_MAX_SEC = 25f;
 
-    private static final float BATTERY_VOLTAGE_MIN_V = 90f;
-    private static final float TRACTION_VOLTAGE_MIN_V = 1800f;
-    private static final float TRACTION_VOLTAGE_MAX_V = 4000f;
+    private static final float TRACTIVE_EFFORT_MAX_KN = 800f;
 
-    private static final float CURRENT_MAX_A = 800f;
+    private static final float DYNAMIC_BRAKE_FORCE_MAX_KN = 534f;
 
-    private static final float FUEL_LOW_PCT = 10f;
+    private static final float FORCE_NOISE_KN = 1f;
 
-    private static final float ENGINE_RPM_MAX = 2200f;
+    private static final float BRAKE_PIPE_LEAK_MAX_KPA_PER_MIN = 34.5f;
 
-    /**
-     * @return "OK" или "ANOMALY: описание1; описание2; ..."
-     */
     public String check(TelemetryRawResponse row) {
         List<String> issues = new ArrayList<>();
 
-        // Скорость
-        if (row.getSpeedKph() != null && row.getSpeedKph() > SPEED_MAX_KPH) {
-            issues.add("speed_kph=" + row.getSpeedKph() + " (макс " + SPEED_MAX_KPH + ")");
-        }
-
-        // Температура двигателя
-        if (row.getEngineTempC() != null) {
-            if (row.getEngineTempC() > ENGINE_TEMP_CRITICAL_C) {
-                issues.add("engine_temp_c=" + row.getEngineTempC() + " [CRITICAL >110°C]");
-            } else if (row.getEngineTempC() > ENGINE_TEMP_WARNING_C) {
-                issues.add("engine_temp_c=" + row.getEngineTempC() + " [WARNING >100°C]");
-            }
-        }
-
-        // Температура масла
-        if (row.getOilTempC() != null) {
-            if (row.getOilTempC() > OIL_TEMP_CRITICAL_C) {
-                issues.add("oil_temp_c=" + row.getOilTempC() + " [CRITICAL >110°C]");
-            } else if (row.getOilTempC() > OIL_TEMP_WARNING_C) {
-                issues.add("oil_temp_c=" + row.getOilTempC() + " [WARNING >90°C]");
-            }
-        }
-
-        // Давление тормозной магистрали
         if (row.getBrakePipePressureKpa() != null) {
-            if (row.getBrakePipePressureKpa() < BRAKE_PIPE_PRESSURE_CRITICAL_KPA) {
-                issues.add("brake_pipe_pressure_kpa=" + row.getBrakePipePressureKpa() + " [CRITICAL <150]");
-            } else if (row.getBrakePipePressureKpa() < BRAKE_PIPE_PRESSURE_WARNING_KPA) {
-                issues.add("brake_pipe_pressure_kpa=" + row.getBrakePipePressureKpa() + " [WARNING <200]");
+            float v = row.getBrakePipePressureKpa();
+            if (v > BRAKE_PIPE_PRESSURE_MAX_KPA) {
+                issues.add("brake_pipe_pressure_kpa=" + v + " [макс " + BRAKE_PIPE_PRESSURE_MAX_KPA + " кПа]");
+            } else if (v < BRAKE_PIPE_PRESSURE_MIN_KPA && isBrakePipeChargedRange(row.getBrakeStatus())) {
+                issues.add("brake_pipe_pressure_kpa=" + v + " [мин " + BRAKE_PIPE_PRESSURE_MIN_KPA + " кПа при заряженной магистрали]");
             }
         }
 
-        // Утечка тормозной магистрали
-        if (row.getBrakePipeLeakKpaPerMin() != null && row.getBrakePipeLeakKpaPerMin() > BRAKE_PIPE_LEAK_WARNING_KPA_MIN) {
-            issues.add("brake_pipe_leak_kpa_per_min=" + row.getBrakePipeLeakKpaPerMin() + " [утечка >5 кПа/мин]");
-        }
-
-        // Напряжение батареи
-        if (row.getBatteryVoltageV() != null && row.getBatteryVoltageV() < BATTERY_VOLTAGE_MIN_V) {
-            issues.add("battery_voltage_v=" + row.getBatteryVoltageV() + " [низкое <" + BATTERY_VOLTAGE_MIN_V + "V]");
-        }
-
-        // Тяговое напряжение
-        if (row.getTractionVoltageV() != null) {
-            if (row.getTractionVoltageV() < TRACTION_VOLTAGE_MIN_V) {
-                issues.add("traction_voltage_v=" + row.getTractionVoltageV() + " [низкое <" + TRACTION_VOLTAGE_MIN_V + "V]");
-            } else if (row.getTractionVoltageV() > TRACTION_VOLTAGE_MAX_V) {
-                issues.add("traction_voltage_v=" + row.getTractionVoltageV() + " [высокое >" + TRACTION_VOLTAGE_MAX_V + "V]");
+        if (row.getMainReservoirPressureKpa() != null) {
+            float v = row.getMainReservoirPressureKpa();
+            if (v < MAIN_RESERVOIR_PRESSURE_MIN_KPA || v > MAIN_RESERVOIR_PRESSURE_MAX_KPA) {
+                issues.add("main_reservoir_pressure_kpa=" + v + " [вне " + MAIN_RESERVOIR_PRESSURE_MIN_KPA + "…"
+                        + MAIN_RESERVOIR_PRESSURE_MAX_KPA + " кПа]");
             }
         }
 
-        // Ток
-        if (row.getCurrentA() != null && row.getCurrentA() > CURRENT_MAX_A) {
-            issues.add("current_a=" + row.getCurrentA() + " [перегрузка >" + CURRENT_MAX_A + "A]");
-        }
-
-        // Обороты двигателя
         if (row.getEngineRpm() != null && row.getEngineRpm() > ENGINE_RPM_MAX) {
-            issues.add("engine_rpm=" + row.getEngineRpm() + " [превышение >" + ENGINE_RPM_MAX + "]");
+            issues.add("engine_rpm=" + row.getEngineRpm() + " [макс " + ENGINE_RPM_MAX + " об/мин]");
         }
 
-        // Уровень топлива
-        if (row.getFuelLevelPct() != null && row.getFuelLevelPct() < FUEL_LOW_PCT) {
-            issues.add("fuel_level_pct=" + row.getFuelLevelPct() + "% [критически низкий <10%]");
-        }
-
-        // Статус тревоги
-        if (row.getAlarmStatus() != null) {
-            String alarm = row.getAlarmStatus().toUpperCase();
-            if ("CRITICAL".equals(alarm)) {
-                issues.add("alarm_status=CRITICAL");
-            } else if ("WARNING".equals(alarm)) {
-                issues.add("alarm_status=WARNING");
+        if (row.getEngineTempC() != null) {
+            float v = row.getEngineTempC();
+            if (v < ENGINE_COOLANT_TEMP_MIN_C || v > ENGINE_COOLANT_TEMP_MAX_C) {
+                issues.add("engine_temp_c=" + v + " [вне " + ENGINE_COOLANT_TEMP_MIN_C + "…"
+                        + ENGINE_COOLANT_TEMP_MAX_C + " °C]");
             }
         }
 
-        // Состояние связи
-        if (row.getCommState() != null) {
-            String comm = row.getCommState().toUpperCase();
-            if ("OFFLINE".equals(comm)) {
-                issues.add("comm_state=OFFLINE");
-            } else if ("DEGRADED".equals(comm)) {
-                issues.add("comm_state=DEGRADED");
+        if (row.getOilTempC() != null) {
+            float v = row.getOilTempC();
+            if (v < OIL_TEMP_MIN_C || v > OIL_TEMP_MAX_C) {
+                issues.add("oil_temp_c=" + v + " [вне " + OIL_TEMP_MIN_C + "…" + OIL_TEMP_MAX_C + " °C]");
             }
         }
 
-        // PCS (автостоп) открыт
+        if (row.getAlerterTimerSec() != null && row.getAlerterTimerSec() > ALERTER_TIMER_MAX_SEC) {
+            issues.add("alerter_timer_sec=" + row.getAlerterTimerSec() + " [макс " + ALERTER_TIMER_MAX_SEC + " с]");
+        }
+
+        if (row.getTractiveEffortKn() != null) {
+            float v = row.getTractiveEffortKn();
+            if (v < -FORCE_NOISE_KN || v > TRACTIVE_EFFORT_MAX_KN) {
+                issues.add("tractive_effort_kn=" + v + " [0…" + TRACTIVE_EFFORT_MAX_KN + " кН]");
+            }
+        }
+
+        if (row.getDynamicBrakeForceKn() != null) {
+            float v = row.getDynamicBrakeForceKn();
+            if (v < -FORCE_NOISE_KN || v > DYNAMIC_BRAKE_FORCE_MAX_KN) {
+                issues.add("dynamic_brake_force_kn=" + v + " [0…" + DYNAMIC_BRAKE_FORCE_MAX_KN + " кН]");
+            }
+        }
+
+        if (row.getBrakePipeLeakKpaPerMin() != null
+                && row.getBrakePipeLeakKpaPerMin() > BRAKE_PIPE_LEAK_MAX_KPA_PER_MIN) {
+            issues.add("brake_pipe_leak_kpa_per_min=" + row.getBrakePipeLeakKpaPerMin()
+                    + " [макс " + BRAKE_PIPE_LEAK_MAX_KPA_PER_MIN + " кПа/мин]");
+        }
+
         if (row.getPcsOpen() != null && row.getPcsOpen()) {
-            issues.add("pcs_open=true [автостоп активирован]");
+            issues.add("pcs_open=true");
         }
 
-        // Коды неисправностей
         if (row.getFaultCodes() != null && !row.getFaultCodes().isEmpty()) {
             issues.add("fault_codes: " + String.join(", ", row.getFaultCodes()));
-        }
-
-        // Health index
-        if (row.getHealthIndex() != null && row.getHealthIndex() < 50) {
-            issues.add("health_index=" + row.getHealthIndex() + " [низкий <50]");
         }
 
         if (issues.isEmpty()) {
             return "OK";
         }
         return "ANOMALY: " + String.join("; ", issues);
+    }
+
+    private static boolean isBrakePipeChargedRange(String brakeStatus) {
+        if (brakeStatus == null || brakeStatus.isBlank()) {
+            return true;
+        }
+        String s = brakeStatus.trim().toLowerCase();
+        if (s.contains("service") || s.contains("apply") || s.contains("emergency")) {
+            return false;
+        }
+        return true;
     }
 }

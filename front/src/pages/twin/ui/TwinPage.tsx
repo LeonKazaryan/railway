@@ -13,6 +13,8 @@ import { TwinHealthGauge } from "@/widgets/train-twin/ui/TwinHealthGauge";
 import { TwinOverview } from "@/widgets/train-twin/ui/TwinOverview";
 import { TwinSystems } from "@/widgets/train-twin/ui/TwinSystems";
 import { TwinRoute } from "@/widgets/train-twin/ui/TwinRoute";
+import { TwinTelemetry } from "@/widgets/train-twin/ui/TwinTelemetry";
+import { TwinEvents } from "@/widgets/train-twin/ui/TwinEvents";
 import { TwinReplayBar } from "@/widgets/train-twin/ui/TwinReplayBar";
 import type { TwinTab } from "@/shared/config/twin-tabs";
 
@@ -156,7 +158,11 @@ export function TwinPage({ trainId }: TwinPageProps) {
               <TwinRoute ws={ws} snapshot={buffer.snapshot} />
             </div>
           )}
-          {activeTab !== "overview" && activeTab !== "systems" && activeTab !== "route" && (
+          {activeTab === "telemetry" && (
+            <TwinTelemetry trainId={trainId} ws={ws} snapshot={buffer.snapshot} />
+          )}
+          {activeTab === "events" && <TwinEvents locomotiveId={ws?.locomotiveId} />}
+          {activeTab !== "overview" && activeTab !== "systems" && activeTab !== "route" && activeTab !== "telemetry" && activeTab !== "events" && (
             <div className="flex-1 flex items-center justify-center">
               <span className="text-sm" style={{ color: "var(--text-muted)" }}>
                 {t("twin.tabComingSoon", { tab: t(`twin.tabs.${activeTab}`) })}

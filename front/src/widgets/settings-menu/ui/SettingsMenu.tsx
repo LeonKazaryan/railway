@@ -1,10 +1,11 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/cn";
 import { useLocaleStore, type AppLocale } from "@/features/locale/model/store";
 import { useThemeStore } from "@/features/theme/model/store";
+import { useAuthStore } from "@/features/auth/model/store";
 
 const LANGS: { locale: AppLocale; label: string }[] = [
   { locale: "en", label: "EN" },
@@ -25,6 +26,7 @@ export function SettingsMenu({ open, onClose, anchorRef }: SettingsMenuProps) {
   const setLocale = useLocaleStore((s) => s.setLocale);
   const theme = useThemeStore((s) => s.theme);
   const setTheme = useThemeStore((s) => s.setTheme);
+  const logout = useAuthStore((s) => s.logout);
 
   useEffect(() => {
     if (!open) return;
@@ -185,6 +187,24 @@ export function SettingsMenu({ open, onClose, anchorRef }: SettingsMenuProps) {
                     />
                   </div>
                 </div>
+              </button>
+            </div>
+
+            <div
+              className="border-t pt-4"
+              style={{ borderColor: "var(--border-subtle)" }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  onClose();
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors hover:bg-[rgba(244,63,94,0.1)]"
+                style={{ color: "var(--danger)" }}
+              >
+                <LogOut size={14} />
+                {t("settings.logout")}
               </button>
             </div>
           </div>
