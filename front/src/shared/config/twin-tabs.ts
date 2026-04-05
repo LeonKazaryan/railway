@@ -3,7 +3,7 @@ export const TWIN_TAB_KEYS = [
   "systems",
   "route",
   "events",
-  "config",
+  "telemetry",
 ] as const;
 
 export type TwinTab = (typeof TWIN_TAB_KEYS)[number];
