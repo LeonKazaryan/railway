@@ -16,6 +16,7 @@ import { useTrainSelectionStore } from "@/features/train-selection/model/store";
 import { useThemeStore } from "@/features/theme/model/store";
 import type { AppTheme } from "@/features/theme/model/store";
 import { TRAIN_STATUS_CONFIG } from "@/entities/train/model/config";
+import { useMapStore } from "../model/store";
 
 const FLEET_GRAPH_SOURCE = "fleet-graph-routes";
 const FLEET_GRAPH_LAYER_GLOW = "fleet-graph-routes-glow";
@@ -282,6 +283,11 @@ export function FleetMap() {
       attributionControl: false,
     });
 
+    useMapStore.getState().setMapCenter({
+      lat: MAP_CONFIG.center[1],
+      lng: MAP_CONFIG.center[0],
+    });
+
     mapRef.current = map;
 
     map.addControl(
@@ -308,6 +314,11 @@ export function FleetMap() {
         layers: [FLEET_TRAIN_DOT_LAYER, FLEET_TRAIN_LABEL_LAYER],
       });
       map.getCanvas().style.cursor = interactive.length > 0 ? "pointer" : "";
+    });
+
+    map.on("moveend", () => {
+      const center = map.getCenter();
+      useMapStore.getState().setMapCenter({ lat: center.lat, lng: center.lng });
     });
 
     map.on("load", () => {
